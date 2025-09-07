@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AiOutlineFileExcel } from "react-icons/ai";
-import { invoke } from "@tauri-apps/api/core";
 import toast, { Toaster } from "react-hot-toast"; // Import React Hot Toast
 import { Button } from "@/components/ui/button";
+import { getStoredDocuments, downloadDocument, deleteAllDocuments } from "@/utils/documentStorage";
 
 export const Route = createFileRoute("/documents")({
   component: RouteComponent,
@@ -21,12 +21,12 @@ function RouteComponent() {
     setError(null);
 
     try {
-      const response = await invoke<string>("get_all_documents");
-      const parsedDocuments: {
-        id: number;
-        file_name: string;
-        created_at: string;
-      }[] = JSON.parse(response);
+      const storedDocs = getStoredDocuments();
+      const parsedDocuments = storedDocs.map(doc => ({
+        id: doc.id,
+        file_name: doc.fileName,
+        created_at: doc.uploadDate,
+      }));
 
       setDocuments(parsedDocuments);
     } catch (err) {
@@ -40,27 +40,20 @@ function RouteComponent() {
   //TO REMOVE PERMAMNENTLY IN PROD
   const handleDelete = async () => {
     try {
-      const response: string = await invoke("delete_all_documents");
-      console.log(response); // Logs success message
+      deleteAllDocuments();
       setDocuments([]);
+      toast.success("All documents deleted successfully");
     } catch (error) {
       console.error("Failed to delete documents:", error);
-      alert("An error occurred while deleting documents.");
+      toast.error("An error occurred while deleting documents.");
     }
   };
 
-  const handleDownload = async (documentId: number) => {
+  const handleDownload = async (documentId: string) => {
     const downloadToastId = toast.loading("Downloading..."); // Show a "loading" toast
 
     try {
-      const filePath: string = await invoke("get_document_file", {
-        documentId,
-      });
-
-      const link = document.createElement("a");
-      link.href = `file://${filePath}`;
-      link.download = filePath.split("/").pop() || "downloaded-file";
-      link.click();
+      downloadDocument(documentId);
 
       // Update toast to success message
       toast.success("File downloaded successfully!", { id: downloadToastId });
