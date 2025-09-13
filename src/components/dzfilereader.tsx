@@ -22,6 +22,7 @@ const Basic: FC = () => {
         const data = event.target?.result as ArrayBuffer;
         setExcelDataArray(data);
         // Send the file data to the Tauri backend
+        console.log("Data,", data);
         const process_data: string = await invoke("process_excel_file", {
           fileData: Array.from(new Uint8Array(data)),
           fileName: filename,
