@@ -22,6 +22,8 @@ import {
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { invoke } from "@tauri-apps/api/core";
+import { useChequeStore } from "@/store/chequeStore";
+import { ChequeType } from "@/type";
 
 type TaskTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
@@ -36,6 +38,7 @@ export function TaskTable<TData, TValue>({
   excelDataArray,
   filename,
 }: TaskTableProps<TData, TValue>) {
+  const { setActiveCheques, checkForDuplicates } = useChequeStore();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
   // const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null);
@@ -69,22 +72,38 @@ export function TaskTable<TData, TValue>({
   }, [data]);
 
   // saves unedited data as Array buffer to database.
-  const handleSaveExcel = async () => {
+  const handleSendForProcessing = async () => {
     if (excelDataArray) {
       try {
+        // Check for duplicates before processing
+        const chequeData = data as ChequeType[];
+        const duplicates = checkForDuplicates();
+        
+        if (duplicates.length > 0) {
+          toast.error(`Found ${duplicates.length} duplicate cheques. Please review before processing.`);
+          return;
+        }
+
         // Call the Tauri backend command
-        const response = await invoke("process_blob", {
+        const response: string = await invoke("process_blob", {
           data: Array.from(new Uint8Array(excelDataArray)),
           fileName: filename,
         });
 
+        // Parse response to get document ID
+        const responseData = JSON.parse(response);
+        const documentId = responseData.document_id || Date.now(); // Fallback ID
+
+        // Set active cheques in store
+        setActiveCheques(chequeData, documentId, filename.toString());
+
         // Notify success
-        toast.success("Excel saved successfully!");
+        toast.success("Excel sent for processing successfully!");
         console.log("Response from backend:", response);
       } catch (error) {
         // Handle errors from the backend
         console.error("Error saving file:", error);
-        toast.error("Failed to save the Excel. Please try again.");
+        toast.error("Failed to send for processing. Please try again.");
       }
     } else {
       toast.error("No Excel data available to save.");
@@ -105,7 +124,7 @@ export function TaskTable<TData, TValue>({
           className="max-w-sm mr-4"
         />
         <div>
-          <Button onClick={handleSaveExcel} className="ml-2">
+          <Button onClick={handleSendForProcessing} className="ml-2">
             Send for Processing
           </Button>
           <Toaster position="bottom-right" />

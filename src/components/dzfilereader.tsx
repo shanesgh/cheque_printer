@@ -5,6 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { TaskTable } from "./tasktable";
 import { columns } from "@/components/columns";
 import { ChequeType } from "@/type";
+import { useChequeStore } from "@/store/chequeStore";
 
 const Basic: FC = () => {
   const [invokedExcelData, setInvokedExcelData] = useState<ChequeType[]>([]);
@@ -12,9 +13,13 @@ const Basic: FC = () => {
     null
   );
   const [filename, setFileName] = useState<String>("");
+  const { clearActiveCheques } = useChequeStore();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
+      // Clear any existing active cheques when new file is uploaded
+      clearActiveCheques();
+      
       const file = acceptedFiles[0];
       setFileName(file.name);
       // Read the file as an ArrayBuffer

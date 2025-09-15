@@ -4,6 +4,7 @@ import { ArrowUpDown } from "lucide-react";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { useState } from "react";
+import { useChequeStore } from "@/store/chequeStore";
 
 // Define the columns for TanStack Table
 export const columns: ColumnDef<ChequeType>[] = [
@@ -119,14 +120,28 @@ export const columns: ColumnDef<ChequeType>[] = [
     },
     cell: ({ row }) => {
       const [status, setStatus] = useState<Status>(row.original.status);
+      const { updateChequeStatus } = useChequeStore();
+      
       return (
         <select
           className="border p-1 rounded"
           value={status}
+          disabled={status === Status.APPROVED}
           onChange={(e) => {
             const newStatus = e.target.value as Status;
+            
+            // Check if trying to modify approved cheque
+            if (row.original.status === Status.APPROVED && newStatus !== Status.APPROVED) {
+              return; // Prevent change
+            }
+            
             setStatus(newStatus);
-            return (row.original.status = newStatus);
+            row.original.status = newStatus;
+            
+            // Update in store if cheque_id exists
+            if (row.original.cheque_id) {
+              updateChequeStatus(row.original.cheque_id, newStatus);
+            }
           }}
         >
           <option value={Status.PENDING}>Pending</option>

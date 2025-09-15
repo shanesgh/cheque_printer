@@ -11,10 +11,17 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as AnalysisImport } from './routes/analysis'
 import { Route as DocumentsImport } from './routes/documents'
 import { Route as DashboardImport } from './routes/dashboard'
 
 // Create/Update Routes
+
+const AnalysisRoute = AnalysisImport.update({
+  id: '/analysis',
+  path: '/analysis',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const DocumentsRoute = DocumentsImport.update({
   id: '/documents',
@@ -32,6 +39,13 @@ const DashboardRoute = DashboardImport.update({
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/analysis': {
+      id: '/analysis'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof AnalysisImport
+      parentRoute: typeof rootRoute
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -52,36 +66,41 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
+  '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
 }
 
 export interface FileRoutesByTo {
+  '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
+  '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/dashboard' | '/documents'
+  fullPaths: '/analysis' | '/dashboard' | '/documents'
   fileRoutesByTo: FileRoutesByTo
-  to: '/dashboard' | '/documents'
-  id: '__root__' | '/dashboard' | '/documents'
+  to: '/analysis' | '/dashboard' | '/documents'
+  id: '__root__' | '/analysis' | '/dashboard' | '/documents'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
+  AnalysisRoute: typeof AnalysisRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  AnalysisRoute: AnalysisRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
 }
@@ -96,9 +115,13 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
+        "/analysis",
         "/dashboard",
         "/documents"
       ]
+    },
+    "/analysis": {
+      "filePath": "analysis.tsx"
     },
     "/dashboard": {
       "filePath": "dashboard.tsx"
