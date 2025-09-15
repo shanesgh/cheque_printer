@@ -11,17 +11,11 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as AnalysisImport } from './routes/analysis'
 import { Route as DocumentsImport } from './routes/documents'
 import { Route as DashboardImport } from './routes/dashboard'
+import { Route as AnalysisImport } from './routes/analysis'
 
 // Create/Update Routes
-
-const AnalysisRoute = AnalysisImport.update({
-  id: '/analysis',
-  path: '/analysis',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const DocumentsRoute = DocumentsImport.update({
   id: '/documents',
@@ -32,6 +26,12 @@ const DocumentsRoute = DocumentsImport.update({
 const DashboardRoute = DashboardImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AnalysisRoute = AnalysisImport.update({
+  id: '/analysis',
+  path: '/analysis',
   getParentRoute: () => rootRoute,
 } as any)
 
