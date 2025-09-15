@@ -1,6 +1,7 @@
 import { FC, useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { invoke } from "@tauri-apps/api/core";
+import toast, { Toaster } from "react-hot-toast";
 import { TaskTable } from "./tasktable";
 import { columns } from "@/components/columns";
 import { ChequeType } from "@/type";
@@ -21,11 +22,24 @@ const Basic: FC = () => {
       reader.onload = async (event) => {
         const data = event.target?.result as ArrayBuffer;
         setExcelDataArray(data);
+
+        // Save the file to database first
+        try {
+          await invoke("process_blob", {
+            data: Array.from(new Uint8Array(data)),
+            fileName: file.name,
+          });
+          toast.success("File saved");
+        } catch (error) {
+          console.error("Error saving file to database:", error);
+          toast.error("Failed to save file to database.");
+        }
+
         // Send the file data to the Tauri backend
         console.log("Data,", data);
         const process_data: string = await invoke("process_excel_file", {
           fileData: Array.from(new Uint8Array(data)),
-          fileName: filename,
+          fileName: file.name,
         });
         let returnedData = JSON.parse(process_data);
         setInvokedExcelData(returnedData);
@@ -47,6 +61,8 @@ const Basic: FC = () => {
 
   return (
     <div className="">
+      <Toaster position="top-right" reverseOrder={false} />
+
       <div
         {...getRootProps()}
         className="dropzone flex w-[700px] h-[150px] m-4 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500 dark:hover:bg-gray-600"
