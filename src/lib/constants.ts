@@ -56,7 +56,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         label: "Analysis",
         route: "/analysis",
         description: "Analyze your spending",
-        badge: 0, // Will be updated dynamically
+        badge: 0,
       },
       {
         icon: Wallet,

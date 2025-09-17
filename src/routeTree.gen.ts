@@ -11,11 +11,18 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as SettingsImport } from './routes/settings'
 import { Route as DocumentsImport } from './routes/documents'
 import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AnalysisImport } from './routes/analysis'
 
 // Create/Update Routes
+
+const SettingsRoute = SettingsImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const DocumentsRoute = DocumentsImport.update({
   id: '/documents',
@@ -60,6 +67,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsImport
       parentRoute: typeof rootRoute
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -69,12 +83,14 @@ export interface FileRoutesByFullPath {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/settings': typeof SettingsRoute
 }
 
 export interface FileRoutesByTo {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/settings': typeof SettingsRoute
 }
 
 export interface FileRoutesById {
@@ -82,14 +98,15 @@ export interface FileRoutesById {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/settings': typeof SettingsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/analysis' | '/dashboard' | '/documents'
+  fullPaths: '/analysis' | '/dashboard' | '/documents' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/analysis' | '/dashboard' | '/documents'
-  id: '__root__' | '/analysis' | '/dashboard' | '/documents'
+  to: '/analysis' | '/dashboard' | '/documents' | '/settings'
+  id: '__root__' | '/analysis' | '/dashboard' | '/documents' | '/settings'
   fileRoutesById: FileRoutesById
 }
 
@@ -97,12 +114,14 @@ export interface RootRouteChildren {
   AnalysisRoute: typeof AnalysisRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AnalysisRoute: AnalysisRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
+  SettingsRoute: SettingsRoute,
 }
 
 export const routeTree = rootRoute
@@ -117,7 +136,8 @@ export const routeTree = rootRoute
       "children": [
         "/analysis",
         "/dashboard",
-        "/documents"
+        "/documents",
+        "/settings"
       ]
     },
     "/analysis": {
@@ -128,6 +148,9 @@ export const routeTree = rootRoute
     },
     "/documents": {
       "filePath": "documents.tsx"
+    },
+    "/settings": {
+      "filePath": "settings.tsx"
     }
   }
 }

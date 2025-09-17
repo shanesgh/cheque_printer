@@ -27,7 +27,7 @@ export function Sidebar() {
       <div className="p-3 space-x-1 flex items-center justify-between">
         <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage src="/avatar.png" alt="User" />
-          <AvatarFallback>AG</AvatarFallback>
+          <AvatarFallback>JD</AvatarFallback>
         </Avatar>
 
         <Button
