@@ -6,16 +6,19 @@ import { Button } from "@/components/ui/button";
 import { NAV_SECTIONS } from "@/lib/constants";
 import { NavItemComponent } from "./nav-items";
 import { cn } from "@/lib/utils";
+import { useUserStore } from "@/store/userStore";
 
 export function Sidebar() {
   const [isExpanded, setIsExpanded] = useState(true);
   const router = useRouter();
+  const { firstName, lastName } = useUserStore();
 
   const toggleSidebar = useCallback(() => {
     setIsExpanded((prev) => !prev);
   }, []);
 
   const currentRoute = router.state.location.pathname;
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
   return (
     <div
@@ -27,7 +30,7 @@ export function Sidebar() {
       <div className="p-3 space-x-1 flex items-center justify-between">
         <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage src="/avatar.png" alt="User" />
-          <AvatarFallback>JD</AvatarFallback>
+          <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
 
         <Button

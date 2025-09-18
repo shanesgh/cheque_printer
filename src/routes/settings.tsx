@@ -4,18 +4,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useUserStore } from "@/store/userStore";
 
 export const Route = createFileRoute("/settings")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const [firstName, setFirstName] = useState("John");
-  const [lastName, setLastName] = useState("Doe");
-  const [email, setEmail] = useState("john.doe@example.com");
+  const { firstName, lastName, email, setUserData } = useUserStore();
+  const [localFirstName, setLocalFirstName] = useState(firstName);
+  const [localLastName, setLocalLastName] = useState(lastName);
+  const [localEmail, setLocalEmail] = useState(email);
 
   const getInitials = () => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    return `${localFirstName.charAt(0)}${localLastName.charAt(0)}`.toUpperCase();
+  };
+
+  const handleSave = () => {
+    setUserData({
+      firstName: localFirstName,
+      lastName: localLastName,
+      email: localEmail,
+    });
   };
 
   return (
@@ -36,28 +46,28 @@ function RouteComponent() {
           <div>
             <label className="text-sm font-medium">First Name</label>
             <Input 
-              value={firstName} 
-              onChange={(e) => setFirstName(e.target.value)}
+              value={localFirstName} 
+              onChange={(e) => setLocalFirstName(e.target.value)}
             />
           </div>
           
           <div>
             <label className="text-sm font-medium">Last Name</label>
             <Input 
-              value={lastName} 
-              onChange={(e) => setLastName(e.target.value)}
+              value={localLastName} 
+              onChange={(e) => setLocalLastName(e.target.value)}
             />
           </div>
           
           <div>
             <label className="text-sm font-medium">Email</label>
             <Input 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)}
+              value={localEmail} 
+              onChange={(e) => setLocalEmail(e.target.value)}
             />
           </div>
           
-          <Button className="w-full">Save Changes</Button>
+          <Button className="w-full" onClick={handleSave}>Save Changes</Button>
         </CardContent>
       </Card>
     </div>
