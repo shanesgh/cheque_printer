@@ -4,6 +4,7 @@ import { AiOutlineFileExcel } from "react-icons/ai";
 import { invoke } from "@tauri-apps/api/core";
 import toast, { Toaster } from "react-hot-toast";
 import { Search, MoreVertical, Download, Edit, Delete } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -238,6 +239,8 @@ function RouteComponent() {
               >
                 <div className="col-span-6 flex items-center space-x-3">
                   <AiOutlineFileExcel className="text-green-600 text-xl flex-shrink-0" />
+                  {/* Show lock icon if file has edited cheques */}
+                  <Lock className="text-gray-400 text-sm flex-shrink-0" />
                   <span className="text-sm text-gray-900 truncate">
                     {doc.file_name}
                   </span>
