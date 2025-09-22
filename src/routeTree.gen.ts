@@ -12,6 +12,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as SettingsImport } from './routes/settings'
+import { Route as FinancesImport } from './routes/finances'
 import { Route as DocumentsImport } from './routes/documents'
 import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AnalysisImport } from './routes/analysis'
@@ -21,6 +22,12 @@ import { Route as AnalysisImport } from './routes/analysis'
 const SettingsRoute = SettingsImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const FinancesRoute = FinancesImport.update({
+  id: '/finances',
+  path: '/finances',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -67,6 +74,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsImport
       parentRoute: typeof rootRoute
     }
+    '/finances': {
+      id: '/finances'
+      path: '/finances'
+      fullPath: '/finances'
+      preLoaderRoute: typeof FinancesImport
+      parentRoute: typeof rootRoute
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -83,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/finances': typeof FinancesRoute
   '/settings': typeof SettingsRoute
 }
 
@@ -90,6 +105,7 @@ export interface FileRoutesByTo {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/finances': typeof FinancesRoute
   '/settings': typeof SettingsRoute
 }
 
@@ -98,15 +114,27 @@ export interface FileRoutesById {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/finances': typeof FinancesRoute
   '/settings': typeof SettingsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/analysis' | '/dashboard' | '/documents' | '/settings'
+  fullPaths:
+    | '/analysis'
+    | '/dashboard'
+    | '/documents'
+    | '/finances'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/analysis' | '/dashboard' | '/documents' | '/settings'
-  id: '__root__' | '/analysis' | '/dashboard' | '/documents' | '/settings'
+  to: '/analysis' | '/dashboard' | '/documents' | '/finances' | '/settings'
+  id:
+    | '__root__'
+    | '/analysis'
+    | '/dashboard'
+    | '/documents'
+    | '/finances'
+    | '/settings'
   fileRoutesById: FileRoutesById
 }
 
@@ -114,6 +142,7 @@ export interface RootRouteChildren {
   AnalysisRoute: typeof AnalysisRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
+  FinancesRoute: typeof FinancesRoute
   SettingsRoute: typeof SettingsRoute
 }
 
@@ -121,6 +150,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalysisRoute: AnalysisRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
+  FinancesRoute: FinancesRoute,
   SettingsRoute: SettingsRoute,
 }
 
@@ -137,6 +167,7 @@ export const routeTree = rootRoute
         "/analysis",
         "/dashboard",
         "/documents",
+        "/finances",
         "/settings"
       ]
     },
@@ -148,6 +179,9 @@ export const routeTree = rootRoute
     },
     "/documents": {
       "filePath": "documents.tsx"
+    },
+    "/finances": {
+      "filePath": "finances.tsx"
     },
     "/settings": {
       "filePath": "settings.tsx"
