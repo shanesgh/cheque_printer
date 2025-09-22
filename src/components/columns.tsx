@@ -172,7 +172,21 @@ export const columns: ColumnDef<ChequeType>[] = [
   },
   {
     accessorKey: "first_signature_user_id",
-    header: "First Signature User ID",
+    header: "First Signature User",
+    cell: ({ row }) => {
+      const userId = row.getValue("first_signature_user_id") as number | null;
+      if (!userId) return <div>-</div>;
+      
+      // Map user IDs to names (you can expand this mapping)
+      const userNames: Record<number, string> = {
+        1: "System Admin",
+        2: "Manager",
+        3: "Supervisor", 
+        4: "Accountant"
+      };
+      
+      return <div>{userNames[userId] || `User ${userId}`}</div>;
+    },
   },
   {
     accessorKey: "second_signature_user_id",

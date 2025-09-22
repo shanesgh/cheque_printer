@@ -33,7 +33,7 @@ pub async fn get_all_cheques(pool: State<'_, SqlitePool>) -> Result<String, Stri
                     "status": r.status,
                     "issue_date": r.issue_date,
                     "date": r.date_field,
-                    "remarks": r.remarks
+                    "remarks": r.remarks,
                     "current_signatures": r.current_signatures,
                     "first_signature_user_id": r.first_signature_user_id
                 }))

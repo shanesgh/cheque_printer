@@ -60,9 +60,9 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       },
       {
         icon: Wallet,
-        label: "Finances",
+        label: "Finance",
         route: "/finances",
-        description: "Manage your finances",
+        description: "Finance dashboard and analytics",
       },
     ],
   },
