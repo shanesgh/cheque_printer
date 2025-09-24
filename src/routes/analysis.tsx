@@ -31,19 +31,23 @@ function RouteComponent() {
   const [cheques, setCheques] = useState<ChequeData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCheques, setSelectedCheques] = useState<Set<number>>(new Set());
-  const [previousStates, setPreviousStates] = useState<Map<number, string>>(new Map());
+  const [selectedCheques, setSelectedCheques] = useState<Set<number>>(
+    new Set()
+  );
+  const [previousStates, setPreviousStates] = useState<Map<number, string>>(
+    new Map()
+  );
 
   const fetchCheques = async () => {
     try {
       const response = await invoke<string>("get_all_cheques");
       const data = JSON.parse(response);
       setCheques(data.cheques || []);
-      
+
       // Store initial states as previous states
       const states = new Map();
       data.cheques?.forEach((c: ChequeData) => {
-        states.set(c.cheque_id, c.status === 'Approved' ? 'Pending' : c.status);
+        states.set(c.cheque_id, c.status === "Approved" ? "Pending" : c.status);
       });
       setPreviousStates(states);
     } catch (error) {
@@ -53,58 +57,66 @@ function RouteComponent() {
     }
   };
 
-  const updateChequeStatus = async (chequeId: number, newStatus: string, remarks?: string) => {
+  const updateChequeStatus = async (
+    chequeId: number,
+    newStatus: string,
+    remarks?: string
+  ) => {
     try {
-      await invoke("update_cheque_status", { 
-        chequeId, 
+      await invoke("update_cheque_status", {
+        chequeId,
         newStatus,
-        ...(remarks && { remarks })
+        ...(remarks && { remarks }),
       });
-      
-      setCheques(prev => prev.map(c => {
-        if (c.cheque_id === chequeId) {
-          const updated = { 
-            ...c, 
-            status: newStatus,
-            ...(remarks && { remarks }),
-            ...(newStatus === 'Approved' && { 
-              current_signatures: 1, 
-              first_signature_user_id: 1 
-            })
-          };
-          
-          // Update previous state
-          if (newStatus !== 'Approved') {
-            setPreviousStates(prev => new Map(prev.set(chequeId, newStatus)));
+
+      setCheques((prev) =>
+        prev.map((c) => {
+          if (c.cheque_id === chequeId) {
+            const updated = {
+              ...c,
+              status: newStatus,
+              ...(remarks && { remarks }),
+              ...(newStatus === "Approved" && {
+                current_signatures: 1,
+                first_signature_user_id: 1,
+              }),
+            };
+
+            // Update previous state
+            if (newStatus !== "Approved") {
+              setPreviousStates(
+                (prev) => new Map(prev.set(chequeId, newStatus))
+              );
+            }
+
+            return updated;
           }
-          
-          return updated;
-        }
-        return c;
-      }));
+          return c;
+        })
+      );
     } catch (error) {
       console.error("Failed to update status:", error);
     }
   };
 
   const handleCheckboxChange = (chequeId: number, checked: boolean) => {
-    const cheque = cheques.find(c => c.cheque_id === chequeId);
+    const cheque = cheques.find((c) => c.cheque_id === chequeId);
     if (!cheque) return;
 
     if (checked) {
-      setSelectedCheques(prev => new Set(prev.add(chequeId)));
-      if (cheque.status !== 'Approved') {
-        updateChequeStatus(chequeId, 'Approved');
+      setSelectedCheques((prev) => new Set(prev.add(chequeId)));
+      if (cheque.status !== "Approved") {
+        updateChequeStatus(chequeId, "Approved");
       }
     } else {
-      setSelectedCheques(prev => {
+      setSelectedCheques((prev) => {
         const newSet = new Set(prev);
         newSet.delete(chequeId);
         return newSet;
       });
-      
-      const previousState = previousStates.get(chequeId) || 'Pending';
-      if (cheque.status === 'Approved') {
+
+      const previousState = previousStates.get(chequeId) || "Pending";
+      if (cheque.status === "Approved") {
         updateChequeStatus(chequeId, previousState);
       }
     }
@@ -112,22 +124,22 @@ function RouteComponent() {
 
   const handleMasterSelect = (checked: boolean) => {
     const filteredCheques = getFilteredCheques();
-    
+
     if (checked) {
       // Approve all
       const newSelected = new Set(selectedCheques);
-      filteredCheques.forEach(cheque => {
+      filteredCheques.forEach((cheque) => {
         newSelected.add(cheque.cheque_id);
-        if (cheque.status !== 'Approved') {
-          updateChequeStatus(cheque.cheque_id, 'Approved');
+        if (cheque.status !== "Approved") {
+          updateChequeStatus(cheque.cheque_id, "Approved");
         }
       });
       setSelectedCheques(newSelected);
     } else {
       // Revert all to previous state
-      filteredCheques.forEach(cheque => {
-        const previousState = previousStates.get(cheque.cheque_id) || 'Pending';
-        if (cheque.status === 'Approved') {
+      filteredCheques.forEach((cheque) => {
+        const previousState = previousStates.get(cheque.cheque_id) || "Pending";
+        if (cheque.status === "Approved") {
           updateChequeStatus(cheque.cheque_id, previousState);
         }
       });
@@ -136,7 +148,7 @@ function RouteComponent() {
   };
 
   const handleStatusChange = (chequeId: number, newStatus: string) => {
-    if (newStatus === 'Declined') {
+    if (newStatus === "Declined") {
       const remarks = prompt("Please provide a reason for declining:");
       if (!remarks?.trim()) return;
       updateChequeStatus(chequeId, newStatus, remarks);
@@ -148,31 +160,39 @@ function RouteComponent() {
   const getFilteredCheques = () => {
     if (!searchQuery) return cheques;
     const q = searchQuery.toLowerCase();
-    return cheques.filter(c => 
-      c.client_name.toLowerCase().includes(q) ||
-      c.cheque_number.toLowerCase().includes(q) ||
-      c.amount.toString().includes(q)
+    return cheques.filter(
+      (c) =>
+        c.client_name.toLowerCase().includes(q) ||
+        c.cheque_number.toLowerCase().includes(q) ||
+        c.amount.toString().includes(q)
     );
   };
 
   const getRowColor = (status: string) => {
     switch (status) {
-      case 'Approved': return 'bg-green-50 border-green-200';
-      case 'Declined': return 'bg-red-50 border-red-200';
-      default: return 'bg-gray-50 border-gray-200';
+      case "Approved":
+        return "bg-green-50 border-green-200";
+      case "Declined":
+        return "bg-red-50 border-red-200";
+      default:
+        return "bg-gray-50 border-gray-200";
     }
   };
 
   const stats = {
     total: cheques.length,
-    approved: cheques.filter(c => c.status === 'Approved').length,
-    declined: cheques.filter(c => c.status === 'Declined').length,
-    pending: cheques.filter(c => c.status === 'Pending').length,
+    approved: cheques.filter((c) => c.status === "Approved").length,
+    declined: cheques.filter((c) => c.status === "Declined").length,
+    pending: cheques.filter((c) => c.status === "Pending").length,
   };
 
   const filteredCheques = getFilteredCheques();
-  const allSelected = filteredCheques.length > 0 && filteredCheques.every(c => selectedCheques.has(c.cheque_id));
-  const someSelected = filteredCheques.some(c => selectedCheques.has(c.cheque_id));
+  const allSelected =
+    filteredCheques.length > 0 &&
+    filteredCheques.every((c) => selectedCheques.has(c.cheque_id));
+  const someSelected = filteredCheques.some((c) =>
+    selectedCheques.has(c.cheque_id)
+  );
 
   useEffect(() => {
     fetchCheques();
@@ -261,9 +281,9 @@ function RouteComponent() {
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={handleMasterSelect}
-                      ref={(el) => {
-                        if (el) el.indeterminate = someSelected && !allSelected;
-                      }}
+                      // ref={(el) => {
+                      //   if (el) el.indeterminate = someSelected && !allSelected;
+                      // }}
                     />
                   </th>
                   <th className="p-3 text-left">Client</th>
@@ -276,32 +296,42 @@ function RouteComponent() {
               </thead>
               <tbody>
                 {filteredCheques.map((cheque) => (
-                  <tr key={cheque.cheque_id} className={`border-b ${getRowColor(cheque.status)}`}>
+                  <tr
+                    key={cheque.cheque_id}
+                    className={`border-b ${getRowColor(cheque.status)}`}
+                  >
                     <td className="p-3">
                       <Checkbox
                         checked={selectedCheques.has(cheque.cheque_id)}
-                        onCheckedChange={(checked) => handleCheckboxChange(cheque.cheque_id, !!checked)}
+                        onCheckedChange={(checked) =>
+                          handleCheckboxChange(cheque.cheque_id, !!checked)
+                        }
                       />
                     </td>
                     <td className="p-3">
                       <div>
                         <div className="font-medium">{cheque.client_name}</div>
-                        <div className="text-sm text-gray-500">#{cheque.cheque_number}</div>
+                        <div className="text-sm text-gray-500">
+                          #{cheque.cheque_number}
+                        </div>
                       </div>
                     </td>
                     <td className="p-3 font-semibold">
-                      ${cheque.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      $
+                      {cheque.amount.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                      })}
                     </td>
                     <td className="p-3 text-sm">
-                      {cheque.date || cheque.issue_date || 'N/A'}
+                      {cheque.date || cheque.issue_date || "N/A"}
                     </td>
-                    <td className="p-3 text-sm">
-                      {cheque.cheque_id}
-                    </td>
+                    <td className="p-3 text-sm">{cheque.cheque_id}</td>
                     <td className="p-3">
                       <select
                         value={cheque.status}
-                        onChange={(e) => handleStatusChange(cheque.cheque_id, e.target.value)}
+                        onChange={(e) =>
+                          handleStatusChange(cheque.cheque_id, e.target.value)
+                        }
                         className="border rounded px-2 py-1 text-sm bg-white"
                       >
                         <option value="Pending">Pending</option>
@@ -310,16 +340,22 @@ function RouteComponent() {
                       </select>
                     </td>
                     <td className="p-3">
-                      {cheque.status === 'Declined' ? (
-                        <div className="text-sm text-red-600">{cheque.remarks || 'No reason provided'}</div>
+                      {cheque.status === "Declined" ? (
+                        <div className="text-sm text-red-600">
+                          {cheque.remarks || "No reason provided"}
+                        </div>
                       ) : (
                         <Input
                           placeholder="Add remarks..."
-                          defaultValue={cheque.remarks || ''}
+                          defaultValue={cheque.remarks || ""}
                           className="text-sm h-8"
                           onBlur={(e) => {
-                            if (e.target.value !== (cheque.remarks || '')) {
-                              updateChequeStatus(cheque.cheque_id, cheque.status, e.target.value);
+                            if (e.target.value !== (cheque.remarks || "")) {
+                              updateChequeStatus(
+                                cheque.cheque_id,
+                                cheque.status,
+                                e.target.value
+                              );
                             }
                           }}
                         />

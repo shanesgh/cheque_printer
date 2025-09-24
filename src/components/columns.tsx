@@ -61,12 +61,10 @@ export const columns: ColumnDef<ChequeType>[] = [
       const cheque = row.original;
       const { activeCheques, updateChequeIssueDate } = useChequeStore();
 
-      // Find the current cheque from store to get real-time data
       const currentCheque =
         activeCheques.find((c) => c.cheque_id === cheque.cheque_id) || cheque;
 
       const handleDateChange = (newDate: string) => {
-        // Update in store if cheque_id exists
         if (cheque.cheque_id) {
           updateChequeIssueDate(cheque.cheque_id, newDate);
         }

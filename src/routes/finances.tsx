@@ -4,7 +4,14 @@ import { invoke } from "@tauri-apps/api/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, TrendingUp, Clock, Search, Eye } from "lucide-react";
+import {
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  Clock,
+  Search,
+  Eye,
+} from "lucide-react";
 
 export const Route = createFileRoute("/finances")({
   component: RouteComponent,
@@ -59,30 +66,34 @@ function RouteComponent() {
   const getFilteredCheques = () => {
     if (!searchQuery) return cheques;
     const q = searchQuery.toLowerCase();
-    return cheques.filter(c => 
-      c.client_name.toLowerCase().includes(q) ||
-      c.cheque_number.toLowerCase().includes(q) ||
-      c.amount.toString().includes(q) ||
-      (c.date && c.date.includes(q)) ||
-      (c.issue_date && c.issue_date.includes(q))
+    return cheques.filter(
+      (c) =>
+        c.client_name.toLowerCase().includes(q) ||
+        c.cheque_number.toLowerCase().includes(q) ||
+        c.amount.toString().includes(q) ||
+        (c.date && c.date.includes(q)) ||
+        (c.issue_date && c.issue_date.includes(q))
     );
   };
 
   const getAnalytics = () => {
     const now = new Date();
-    const thisMonth = cheques.filter(c => {
+    const thisMonth = cheques.filter((c) => {
       const date = new Date(c.created_at);
-      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+      return (
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear()
+      );
     });
-    
-    const highValue = cheques.filter(c => c.amount > 10000);
+
+    const highValue = cheques.filter((c) => c.amount > 10000);
     const avgProcessingTime = "2.3 days"; // Mock data
-    
+
     return {
       monthlyTotal: thisMonth.reduce((sum, c) => sum + c.amount, 0),
       monthlyCount: thisMonth.length,
       highValueCount: highValue.length,
-      avgProcessingTime
+      avgProcessingTime,
     };
   };
 
@@ -120,10 +131,12 @@ function RouteComponent() {
             <div className="text-2xl font-bold">
               ${analytics.monthlyTotal.toLocaleString()}
             </div>
-            <div className="text-sm text-gray-500">{analytics.monthlyCount} cheques</div>
+            <div className="text-sm text-gray-500">
+              {analytics.monthlyCount} cheques
+            </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -136,7 +149,7 @@ function RouteComponent() {
             <div className="text-sm text-gray-500">&gt; $10,000</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -145,11 +158,13 @@ function RouteComponent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.avgProcessingTime}</div>
+            <div className="text-2xl font-bold">
+              {analytics.avgProcessingTime}
+            </div>
             <div className="text-sm text-gray-500">processing time</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -195,26 +210,39 @@ function RouteComponent() {
               </thead>
               <tbody>
                 {filteredCheques.map((cheque) => (
-                  <tr key={cheque.cheque_id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-mono text-sm">{cheque.cheque_number}</td>
+                  <tr
+                    key={cheque.cheque_id}
+                    className="border-b hover:bg-gray-50"
+                  >
+                    <td className="p-3 font-mono text-sm">
+                      {cheque.cheque_number}
+                    </td>
                     <td className="p-3">{cheque.client_name}</td>
                     <td className="p-3 font-semibold">
-                      ${cheque.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      $
+                      {cheque.amount.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                      })}
                     </td>
                     <td className="p-3 text-sm">
-                      {cheque.date || cheque.issue_date || 'N/A'}
+                      {cheque.date || cheque.issue_date || "N/A"}
                     </td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        cheque.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                        cheque.status === 'Declined' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          cheque.status === "Approved"
+                            ? "bg-green-100 text-green-800"
+                            : cheque.status === "Declined"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
                         {cheque.status}
                       </span>
                     </td>
                     <td className="p-3 text-sm">
-                      {cheque.current_signatures || 0}/{cheque.amount > 1500 ? 2 : 1}
+                      {cheque.current_signatures || 0}/
+                      {cheque.amount > 1500 ? 2 : 1}
                     </td>
                     <td className="p-3">
                       <Button

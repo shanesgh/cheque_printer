@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/documents")({
-  component: RouteComponent,
+  component: DashboardComponent,
 });
 
 interface Document {
@@ -25,7 +25,7 @@ interface Document {
   file_data: number[];
 }
 
-function RouteComponent() {
+function DashboardComponent() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
@@ -310,4 +310,4 @@ function RouteComponent() {
   );
 }
 
-export default RouteComponent;
+export default DashboardComponent;

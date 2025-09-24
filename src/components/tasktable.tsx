@@ -78,9 +78,11 @@ export function TaskTable<TData, TValue>({
         // Check for duplicates before processing
         const chequeData = data as ChequeType[];
         const duplicates = checkForDuplicates();
-        
+
         if (duplicates.length > 0) {
-          toast.error(`Found ${duplicates.length} duplicate cheques. Please review before processing.`);
+          toast.error(
+            `Found ${duplicates.length} duplicate cheques. Please review before processing.`
+          );
           return;
         }
 
