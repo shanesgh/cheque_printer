@@ -24,7 +24,6 @@ import { Button } from "./ui/button";
 import { invoke } from "@tauri-apps/api/core";
 import { useChequeStore } from "@/store/chequeStore";
 import { ChequeType } from "@/type";
-import toast from "react-hot-toast";
 
 type TaskTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
