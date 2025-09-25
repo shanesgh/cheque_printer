@@ -29,16 +29,15 @@ export const NavItemComponent: FC<NavItemProps> = ({
       className={cn(
         "relative flex items-center h-9 my-1 px-4 cursor-pointer rounded-lg mx-2",
         isActive ? "bg-black text-white " : "hover:bg-gray-100 ",
-        isExpanded ? "justify-start" : "justify-center"
+        isExpanded ? "justify-start" : "justify-center md:justify-center"
       )}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
       <Icon className="size-4" />
-      {isExpanded && <span className="ml-4 text-sm">{label}</span>}
-      {/* {badge && <Badge className="ml-auto bg-red-500">{badge}</Badge>} */}
+      {isExpanded && <span className="ml-4 text-sm truncate">{label}</span>}
       {!isExpanded && showTooltip && (
-        <div className="absolute left-full ml-1 whitespace-no-wrap bg-black text-white text-sm rounded  py-1 w-20 z-20 text-center">
+        <div className="absolute left-full ml-2 whitespace-nowrap bg-black text-white text-xs rounded px-2 py-1 z-50 hidden md:block">
           {label}
         </div>
       )}

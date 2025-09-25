@@ -73,22 +73,22 @@ function RouteComponent() {
   ];
 
   return (
-    <div className="ml-[280px] p-6">
+    <div className="p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
       
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
-        <div className="w-64">
+        <div className="w-full lg:w-64">
           <Card>
             <CardContent className="p-4">
-              <nav className="space-y-2">
+              <nav className="flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-2 overflow-x-auto lg:overflow-x-visible">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      className={`flex-shrink-0 lg:w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors whitespace-nowrap ${
                         activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-100'
                       }`}
                     >
