@@ -45,6 +45,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     title: "Operations",
     items: [
       {
+        icon: Wallet,
+        label: "Upload File",
+        route: "/upload-file",
+        description: "Finance dashboard and analytics",
+      },
+      {
         icon: LayoutDashboard,
         label: "Dashboard",
         route: "/dashboard",
@@ -58,12 +64,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         description: "Analyze your spending",
         badge: 0,
       },
-      {
-        icon: Wallet,
-        label: "Upload File",
-        route: "/upload-file",
-        description: "Finance dashboard and analytics",
-      },
+      
     ],
   },
   {
