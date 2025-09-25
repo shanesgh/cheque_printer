@@ -19,3 +19,6 @@ export const Route = createRootRoute({
       <TanStackRouterDevtools />
     </div>
   ),
+
+}
+)
