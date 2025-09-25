@@ -10,7 +10,7 @@ pub async fn get_all_cheques(pool: State<'_, SqlitePool>) -> Result<String, Stri
         "SELECT d.id as document_id, d.file_name, d.created_at, 
                 c.id as cheque_id, c.cheque_number, c.amount, c.client_name, 
                 c.status, c.issue_date, c.date_field, c.remarks,
-                c.current_signatures, c.first_signature_user_id
+                c.current_signatures, c.first_signature_user_id, c.second_signature_user_id
          FROM documents d 
          LEFT JOIN cheques c ON d.id = c.document_id 
          ORDER BY d.created_at DESC, c.id ASC"

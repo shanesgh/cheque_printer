@@ -24,6 +24,7 @@ interface ChequeData {
   remarks?: string;
   current_signatures?: number;
   first_signature_user_id?: number;
+  second_signature_user_id?: number;
 }
 
 interface AuditTrail {
@@ -84,6 +85,70 @@ function RouteComponent() {
       highValueCount: highValue.length,
       avgProcessingTime
     };
+  };
+
+  const updateChequeStatus = async (chequeId: number, newStatus: string, remarks?: string) => {
+    try {
+      // Calculate signature changes
+      const currentCheque = cheques.find(c => c.cheque_id === chequeId);
+      let newCurrentSignatures = currentCheque?.current_signatures || 0;
+      let newFirstSignatureUserId = currentCheque?.first_signature_user_id;
+      let newSecondSignatureUserId = currentCheque?.second_signature_user_id;
+      
+      if (newStatus === 'Approved' && currentCheque?.status !== 'Approved') {
+        // Increment signatures when approving
+        newCurrentSignatures = Math.min((newCurrentSignatures || 0) + 1, currentCheque?.amount > 1500 ? 2 : 1);
+        if (!newFirstSignatureUserId) {
+          newFirstSignatureUserId = 1; // Current user ID
+        } else if (!newSecondSignatureUserId && currentCheque?.amount > 1500) {
+          newSecondSignatureUserId = 1; // Current user ID
+        }
+      } else if (newStatus !== 'Approved' && currentCheque?.status === 'Approved') {
+        // Decrement signatures when unapproving
+        newCurrentSignatures = Math.max((newCurrentSignatures || 0) - 1, 0);
+        if (newCurrentSignatures === 0) {
+          newFirstSignatureUserId = null;
+          newSecondSignatureUserId = null;
+        } else if (newCurrentSignatures === 1) {
+          newSecondSignatureUserId = null;
+        }
+      }
+
+      await invoke("update_cheque_status", { 
+        chequeId, 
+        newStatus,
+        ...(remarks && { remarks })
+      });
+      
+      setCheques(prev => prev.map(c => {
+        if (c.cheque_id === chequeId) {
+          const updated = { 
+            ...c, 
+            status: newStatus,
+            ...(remarks && { remarks }),
+            current_signatures: newCurrentSignatures,
+            first_signature_user_id: newFirstSignatureUserId,
+            second_signature_user_id: newSecondSignatureUserId
+          };
+          
+          // Update previous state
+          return updated;
+        }
+        return c;
+      }));
+    } catch (error) {
+      console.error("Failed to update cheque status:", error);
+    }
+  };
+
+  const getUserName = (userId: number) => {
+    const userNames: Record<number, string> = {
+      1: "System Admin",
+      2: "Manager", 
+      3: "Supervisor",
+      4: "Accountant"
+    };
+    return userNames[userId] || `User ${userId}`;
   };
 
   const analytics = getAnalytics();
@@ -189,7 +254,10 @@ function RouteComponent() {
                   <th className="p-3 text-left">Amount</th>
                   <th className="p-3 text-left">Date</th>
                   <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Signatures</th>
+                  <th className="p-3 text-left">Current Signatures</th>
+                  <th className="p-3 text-left">Required Signatures</th>
+                  <th className="p-3 text-left">Signed By (First)</th>
+                  <th className="p-3 text-left">Signed By (Second)</th>
                   <th className="p-3 text-left">Actions</th>
                 </tr>
               </thead>
@@ -214,7 +282,16 @@ function RouteComponent() {
                       </span>
                     </td>
                     <td className="p-3 text-sm">
-                      {cheque.current_signatures || 0}/{cheque.amount > 1500 ? 2 : 1}
+                      {cheque.current_signatures || 0}
+                    </td>
+                    <td className="p-3 text-sm">
+                      {cheque.amount > 1500 ? 2 : 1}
+                    </td>
+                    <td className="p-3 text-sm">
+                      {cheque.first_signature_user_id ? getUserName(cheque.first_signature_user_id) : '-'}
+                    </td>
+                    <td className="p-3 text-sm">
+                      {cheque.second_signature_user_id ? getUserName(cheque.second_signature_user_id) : '-'}
                     </td>
                     <td className="p-3">
                       <Button

@@ -18,4 +18,5 @@ export interface ChequeData {
   remarks?: string;
   current_signatures?: number;
   first_signature_user_id?: number;
+  second_signature_user_id?: number;
 }

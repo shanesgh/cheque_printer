@@ -42,6 +42,7 @@ pub struct ChequeWithDocument {
     pub remarks: Option<String>,
     pub current_signatures: Option<i64>,
     pub first_signature_user_id: Option<i64>,
+    pub second_signature_user_id: Option<i64>,
 }
 
 #[derive(Debug, thiserror::Error, Serialize, Deserialize)]
