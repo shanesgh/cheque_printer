@@ -24,6 +24,7 @@ import { Button } from "./ui/button";
 import { invoke } from "@tauri-apps/api/core";
 import { useChequeStore } from "@/store/chequeStore";
 import { ChequeType } from "@/type";
+import toast from "react-hot-toast";
 
 type TaskTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
@@ -112,6 +113,7 @@ export function TaskTable<TData, TValue>({
 
   return (
     <div className="">
+      <Toaster position="top-right" reverseOrder={false} />
       <div className=" flex items-center py-4">
         <Input
           placeholder="Filter payee..."
@@ -127,7 +129,6 @@ export function TaskTable<TData, TValue>({
           <Button onClick={handleSendForProcessing} className="ml-2">
             Send for Processing
           </Button>
-          <Toaster position="bottom-right" />
         </div>
       </div>
       <div className=" rounded-md border">

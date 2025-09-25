@@ -60,8 +60,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       },
       {
         icon: Wallet,
-        label: "Finance",
-        route: "/finances",
+        label: "Upload File",
+        route: "/upload-file",
         description: "Finance dashboard and analytics",
       },
     ],
@@ -69,13 +69,6 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   {
     title: "Services",
     items: [
-      {
-        icon: MessageSquare,
-        label: "Messages",
-        route: "/messages",
-        description: "View your messages",
-        badge: 9,
-      },
       {
         icon: FolderClosed,
         label: "Documents",

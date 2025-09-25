@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useUserStore } from "@/store/userStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { UserRole, UserType } from "@/types/user";
+import { UserRole, UserType } from "@/types";
 import { Shield, Users, Database, Bell, Trash2, Edit, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
