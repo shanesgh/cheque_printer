@@ -187,13 +187,13 @@ function RouteComponent() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="ml-[280px] flex flex-col h-screen bg-white">
       <Toaster position="top-right" reverseOrder={false} />
 
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b">
         <h1 className="text-2xl font-medium text-gray-900">My Drive</h1>
-        <div className="relative w-full max-w-96">
+        <div className="relative w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search files by name or date..."
@@ -224,41 +224,41 @@ function RouteComponent() {
           <div className="space-y-1">
             {/* Header row */}
             <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm font-medium text-gray-500 border-b">
-              <div className="col-span-6 md:col-span-6">Name</div>
-              <div className="col-span-2 hidden md:block">Owner</div>
-              <div className="col-span-2 md:col-span-2">Date uploaded</div>
-              <div className="col-span-1 hidden md:block">File size</div>
-              <div className="col-span-1 md:col-span-1"></div>
+              <div className="col-span-6">Name</div>
+              <div className="col-span-2">Owner</div>
+              <div className="col-span-2">Date uploaded</div>
+              <div className="col-span-1">File size</div>
+              <div className="col-span-1"></div>
             </div>
 
             {/* Document rows */}
             {[...filteredDocuments].reverse().map((doc) => (
               <div
                 key={doc.id}
-                className="grid grid-cols-12 gap-2 md:gap-4 px-2 md:px-4 py-3 hover:bg-gray-50 rounded-lg transition-colors"
+                className="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-gray-50 rounded-lg transition-colors"
               >
-                <div className="col-span-6 md:col-span-6 flex items-center space-x-2 md:space-x-3">
+                <div className="col-span-6 flex items-center space-x-3">
                   <AiOutlineFileExcel className="text-green-600 text-xl flex-shrink-0" />
                   {/* Show lock icon if file has edited cheques */}
-                  <Lock className="text-gray-400 text-sm flex-shrink-0 hidden md:block" />
-                  <span className="text-xs md:text-sm text-gray-900 truncate">
+                  <Lock className="text-gray-400 text-sm flex-shrink-0" />
+                  <span className="text-sm text-gray-900 truncate">
                     {doc.file_name}
                   </span>
                 </div>
-                <div className="col-span-2 hidden md:flex items-center">
-                  <span className="text-xs md:text-sm text-gray-600">System</span>
+                <div className="col-span-2 flex items-center">
+                  <span className="text-sm text-gray-600">System</span>
                 </div>
-                <div className="col-span-2 md:col-span-2 flex items-center">
-                  <span className="text-xs md:text-sm text-gray-600">
+                <div className="col-span-2 flex items-center">
+                  <span className="text-sm text-gray-600">
                     {formatDate(doc.created_at)}
                   </span>
                 </div>
-                <div className="col-span-1 hidden md:flex items-center">
-                  <span className="text-xs md:text-sm text-gray-600">
+                <div className="col-span-1 flex items-center">
+                  <span className="text-sm text-gray-600">
                     {formatFileSize(doc.file_data)}
                   </span>
                 </div>
-                <div className="col-span-4 md:col-span-1 flex items-center justify-end">
+                <div className="col-span-1 flex items-center justify-end">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
