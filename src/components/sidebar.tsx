@@ -30,7 +30,7 @@ export function Sidebar() {
         )}
       >
       <div className="p-3 space-x-1 flex items-center justify-between">
-        <Avatar className={cn("h-10 w-10 shrink-0", !isExpanded && "hidden")}>
+        <Avatar className={cn("h-10 w-10 shrink-0", !isExpanded && "mx-auto")}>
           <AvatarImage src="/avatar.png" alt="User" />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
@@ -38,7 +38,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          className="shrink-0"
+          className={cn("shrink-0", !isExpanded && "mx-auto")}
           onClick={toggleSidebar}
         >
           {isExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -48,7 +48,7 @@ export function Sidebar() {
       <nav className="flex-1 ">
         {NAV_SECTIONS.map((section) => (
           <div key={section.title} className="px-3 py-2">
-            <h2 className={cn("mb-2 px-2 text-sm font-semibold text-muted-foreground", !isExpanded && "sr-only")}>
+            <h2 className={cn("mb-2 px-2 text-sm font-semibold text-muted-foreground", !isExpanded && "hidden")}>
               {section.title}
             </h2>
 
