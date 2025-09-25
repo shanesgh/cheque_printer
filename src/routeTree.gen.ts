@@ -11,23 +11,23 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as UploadFileImport } from './routes/upload-file'
 import { Route as SettingsImport } from './routes/settings'
-import { Route as FinancesImport } from './routes/finances'
 import { Route as DocumentsImport } from './routes/documents'
 import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AnalysisImport } from './routes/analysis'
 
 // Create/Update Routes
 
-const SettingsRoute = SettingsImport.update({
-  id: '/settings',
-  path: '/settings',
+const UploadFileRoute = UploadFileImport.update({
+  id: '/upload-file',
+  path: '/upload-file',
   getParentRoute: () => rootRoute,
 } as any)
 
-const FinancesRoute = FinancesImport.update({
-  id: '/finances',
-  path: '/finances',
+const SettingsRoute = SettingsImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -74,18 +74,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsImport
       parentRoute: typeof rootRoute
     }
-    '/finances': {
-      id: '/finances'
-      path: '/finances'
-      fullPath: '/finances'
-      preLoaderRoute: typeof FinancesImport
-      parentRoute: typeof rootRoute
-    }
     '/settings': {
       id: '/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsImport
+      parentRoute: typeof rootRoute
+    }
+    '/upload-file': {
+      id: '/upload-file'
+      path: '/upload-file'
+      fullPath: '/upload-file'
+      preLoaderRoute: typeof UploadFileImport
       parentRoute: typeof rootRoute
     }
   }
@@ -97,16 +97,16 @@ export interface FileRoutesByFullPath {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
-  '/finances': typeof FinancesRoute
   '/settings': typeof SettingsRoute
+  '/upload-file': typeof UploadFileRoute
 }
 
 export interface FileRoutesByTo {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
-  '/finances': typeof FinancesRoute
   '/settings': typeof SettingsRoute
+  '/upload-file': typeof UploadFileRoute
 }
 
 export interface FileRoutesById {
@@ -114,8 +114,8 @@ export interface FileRoutesById {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
-  '/finances': typeof FinancesRoute
   '/settings': typeof SettingsRoute
+  '/upload-file': typeof UploadFileRoute
 }
 
 export interface FileRouteTypes {
@@ -124,17 +124,17 @@ export interface FileRouteTypes {
     | '/analysis'
     | '/dashboard'
     | '/documents'
-    | '/finances'
     | '/settings'
+    | '/upload-file'
   fileRoutesByTo: FileRoutesByTo
-  to: '/analysis' | '/dashboard' | '/documents' | '/finances' | '/settings'
+  to: '/analysis' | '/dashboard' | '/documents' | '/settings' | '/upload-file'
   id:
     | '__root__'
     | '/analysis'
     | '/dashboard'
     | '/documents'
-    | '/finances'
     | '/settings'
+    | '/upload-file'
   fileRoutesById: FileRoutesById
 }
 
@@ -142,16 +142,16 @@ export interface RootRouteChildren {
   AnalysisRoute: typeof AnalysisRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
-  FinancesRoute: typeof FinancesRoute
   SettingsRoute: typeof SettingsRoute
+  UploadFileRoute: typeof UploadFileRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AnalysisRoute: AnalysisRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
-  FinancesRoute: FinancesRoute,
   SettingsRoute: SettingsRoute,
+  UploadFileRoute: UploadFileRoute,
 }
 
 export const routeTree = rootRoute
@@ -167,8 +167,8 @@ export const routeTree = rootRoute
         "/analysis",
         "/dashboard",
         "/documents",
-        "/finances",
-        "/settings"
+        "/settings",
+        "/upload-file"
       ]
     },
     "/analysis": {
@@ -180,11 +180,11 @@ export const routeTree = rootRoute
     "/documents": {
       "filePath": "documents.tsx"
     },
-    "/finances": {
-      "filePath": "finances.tsx"
-    },
     "/settings": {
       "filePath": "settings.tsx"
+    },
+    "/upload-file": {
+      "filePath": "upload-file.tsx"
     }
   }
 }
