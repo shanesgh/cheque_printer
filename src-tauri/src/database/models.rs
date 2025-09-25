@@ -98,3 +98,7 @@ impl From<DataError> for String {
         error.to_string() // Converts the error to a string for frontend compatibility.
     }
 }
+
+
+
+
