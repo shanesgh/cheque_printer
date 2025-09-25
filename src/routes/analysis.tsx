@@ -102,13 +102,13 @@ function RouteComponent() {
   }
 
   return (
-    <div className="ml-[280px] p-6 bg-gray-50 min-h-screen">
+    <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Finance Dashboard</h1>
       </div>
 
       {/* Analytics Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -166,7 +166,7 @@ function RouteComponent() {
 
       {/* Search */}
       <div className="mb-6">
-        <div className="relative max-w-md">
+        <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search by date, cheque number, or payee..."
@@ -180,30 +180,30 @@ function RouteComponent() {
       {/* Cheques Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-w-full">
             <table className="w-full">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="p-3 text-left">Cheque #</th>
-                  <th className="p-3 text-left">Payee</th>
-                  <th className="p-3 text-left">Amount</th>
-                  <th className="p-3 text-left">Date</th>
-                  <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Actions</th>
+                  <th className="p-2 md:p-3 text-left min-w-[100px]">Cheque #</th>
+                  <th className="p-2 md:p-3 text-left min-w-[120px]">Payee</th>
+                  <th className="p-2 md:p-3 text-left min-w-[100px]">Amount</th>
+                  <th className="p-2 md:p-3 text-left min-w-[80px]">Date</th>
+                  <th className="p-2 md:p-3 text-left min-w-[80px]">Status</th>
+                  <th className="p-2 md:p-3 text-left min-w-[80px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCheques.map((cheque) => (
                   <tr key={cheque.cheque_id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-mono text-sm">{cheque.cheque_number}</td>
-                    <td className="p-3">{cheque.client_name}</td>
-                    <td className="p-3 font-semibold">
+                    <td className="p-2 md:p-3 font-mono text-xs md:text-sm">{cheque.cheque_number}</td>
+                    <td className="p-2 md:p-3 text-sm md:text-base">{cheque.client_name}</td>
+                    <td className="p-2 md:p-3 font-semibold text-sm md:text-base">
                       ${cheque.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.date || cheque.issue_date || 'N/A'}
                     </td>
-                    <td className="p-3">
+                    <td className="p-2 md:p-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         cheque.status === 'Approved' ? 'bg-green-100 text-green-800' :
                         cheque.status === 'Declined' ? 'bg-red-100 text-red-800' :
@@ -212,7 +212,7 @@ function RouteComponent() {
                         {cheque.status}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="p-2 md:p-3">
                       <Button
                         variant="ghost"
                         size="sm"
