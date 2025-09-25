@@ -68,7 +68,7 @@ export function Sidebar() {
       </div>
       {!isExpanded && <div className="md:hidden fixed inset-0 bg-black/50 z-20" onClick={toggleSidebar} />}
     </>
-    </div>
+    
   );
 }
 
