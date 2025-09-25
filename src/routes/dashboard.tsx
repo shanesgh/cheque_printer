@@ -202,14 +202,14 @@ function RouteComponent() {
 
   if (loading) {
     return (
-      <div className="ml-[280px] flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen">
         <div className="text-gray-500">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="ml-[280px] p-6 bg-gray-50 min-h-screen">
+    <div className="p-3 md:p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Analysis</h1>
       </div>
@@ -220,13 +220,13 @@ function RouteComponent() {
           placeholder="Search cheques..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-md"
+          className="w-full md:max-w-md"
         />
         <Button>Print Cheques</Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setStatusFilter('all')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Total</CardTitle>
@@ -276,85 +276,85 @@ function RouteComponent() {
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-w-full">
             <table className="w-full">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="p-3 text-left">
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm">
                     <Checkbox
                       checked={allSelected}
                       onCheckedChange={handleMasterSelect}
                     />
                   </th>
-                  <th className="p-3 text-left">Client</th>
-                  <th className="p-3 text-left">Amount</th>
-                  <th className="p-3 text-left">Date</th>
-                  <th className="p-3 text-left">Cheque ID</th>
-                  <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Current Signatures</th>
-                  <th className="p-3 text-left">Required Signatures</th>
-                  <th className="p-3 text-left">Signed By (First)</th>
-                  <th className="p-3 text-left">Signed By (Second)</th>
-                  <th className="p-3 text-left">Remarks</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Client</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">Amount</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Date</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Cheque ID</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">Status</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Current Signatures</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Required Signatures</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Signed By (First)</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Signed By (Second)</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[150px]">Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCheques.map((cheque) => (
                   <tr key={cheque.cheque_id} className={`border-b ${getRowColor(cheque.status)}`}>
-                    <td className="p-3">
+                    <td className="p-2 md:p-3">
                       <Checkbox
                         checked={selectedCheques.has(cheque.cheque_id)}
                         onCheckedChange={(checked) => handleCheckboxChange(cheque.cheque_id, !!checked)}
                       />
                     </td>
-                    <td className="p-3">
+                    <td className="p-2 md:p-3">
                       <div>
-                        <div className="font-medium">{cheque.client_name}</div>
-                        <div className="text-sm text-gray-500">#{cheque.cheque_number}</div>
+                        <div className="font-medium text-xs md:text-sm">{cheque.client_name}</div>
+                        <div className="text-xs text-gray-500">#{cheque.cheque_number}</div>
                       </div>
                     </td>
-                    <td className="p-3 font-semibold">
+                    <td className="p-2 md:p-3 font-semibold text-xs md:text-sm">
                       ${cheque.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.date || cheque.issue_date || 'N/A'}
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.cheque_id}
                     </td>
-                    <td className="p-3">
+                    <td className="p-2 md:p-3">
                       <select
                         value={cheque.status}
                         onChange={(e) => handleStatusChange(cheque.cheque_id, e.target.value)}
-                        className="border rounded px-2 py-1 text-sm bg-white"
+                        className="border rounded px-1 md:px-2 py-1 text-xs md:text-sm bg-white w-full"
                       >
                         <option value="Pending">Pending</option>
                         <option value="Approved">Approved</option>
                         <option value="Declined">Declined</option>
                       </select>
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.current_signatures || 0}
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.amount > 1500 ? 2 : 1}
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.first_signature_user_id ? getUserName(cheque.first_signature_user_id) : '-'}
                     </td>
-                    <td className="p-3 text-sm">
+                    <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.second_signature_user_id ? getUserName(cheque.second_signature_user_id) : '-'}
                     </td>
-                    <td className="p-3">
+                    <td className="p-2 md:p-3">
                       {cheque.status === 'Declined' ? (
-                        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
+                        <div className="text-xs md:text-sm text-red-600 bg-red-50 border border-red-200 rounded px-1 md:px-2 py-1">
                           {cheque.remarks || 'No reason provided'}
                         </div>
                       ) : (
                         <Input
                           placeholder={cheque.status === 'Declined' ? 'Reason required' : 'Add remarks...'}
                           defaultValue={cheque.remarks || ''}
-                          className={`text-sm h-8 ${cheque.status === 'Declined' ? 'border-red-300 bg-red-50' : ''}`}
+                          className={`text-xs md:text-sm h-6 md:h-8 ${cheque.status === 'Declined' ? 'border-red-300 bg-red-50' : ''}`}
                           onBlur={(e) => {
                             if (e.target.value !== (cheque.remarks || '')) {
                               updateChequeStatus(cheque.cheque_id, cheque.status, e.target.value);

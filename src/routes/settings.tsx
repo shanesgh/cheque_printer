@@ -73,12 +73,12 @@ function RouteComponent() {
   ];
 
   return (
-    <div className="ml-[280px] p-6">
+    <div className="p-3 md:p-6">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
       
-      <div className="flex gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar */}
-        <div className="w-64">
+        <div className="w-full md:w-64">
           <Card>
             <CardContent className="p-4">
               <nav className="space-y-2">
@@ -88,7 +88,7 @@ function RouteComponent() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors text-sm ${
                         activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'hover:bg-gray-100'
                       }`}
                     >
@@ -203,7 +203,7 @@ function RouteComponent() {
                 {showAddUser && (
                   <div className="mb-6 p-4 border rounded-lg">
                     <h3 className="font-medium mb-4">Add New User</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
                         placeholder="First Name"
                         value={newUser.first_name}
