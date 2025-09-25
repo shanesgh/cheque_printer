@@ -41,6 +41,31 @@ function RouteComponent() {
 
   const updateChequeStatus = async (chequeId: number, newStatus: string, remarks?: string) => {
     try {
+      // Calculate signature changes
+      const currentCheque = cheques.find(c => c.cheque_id === chequeId);
+      let newCurrentSignatures = currentCheque?.current_signatures || 0;
+      let newFirstSignatureUserId = currentCheque?.first_signature_user_id;
+      let newSecondSignatureUserId = currentCheque?.second_signature_user_id;
+      
+      if (newStatus === 'Approved' && currentCheque?.status !== 'Approved') {
+        // Increment signatures when approving
+        newCurrentSignatures = Math.min((newCurrentSignatures || 0) + 1, currentCheque?.amount > 1500 ? 2 : 1);
+        if (!newFirstSignatureUserId) {
+          newFirstSignatureUserId = 1; // Current user ID
+        } else if (!newSecondSignatureUserId && currentCheque?.amount > 1500) {
+          newSecondSignatureUserId = 1; // Current user ID
+        }
+      } else if (newStatus !== 'Approved' && currentCheque?.status === 'Approved') {
+        // Decrement signatures when unapproving
+        newCurrentSignatures = Math.max((newCurrentSignatures || 0) - 1, 0);
+        if (newCurrentSignatures === 0) {
+          newFirstSignatureUserId = null;
+          newSecondSignatureUserId = null;
+        } else if (newCurrentSignatures === 1) {
+          newSecondSignatureUserId = null;
+        }
+      }
+
       await invoke("update_cheque_status", { 
         chequeId, 
         newStatus,
@@ -53,16 +78,10 @@ function RouteComponent() {
             ...c, 
             status: newStatus,
             ...(remarks && { remarks }),
-            ...(newStatus === 'Approved' && { 
-              current_signatures: 1, 
-              first_signature_user_id: 1 
-            })
+            current_signatures: newCurrentSignatures,
+            first_signature_user_id: newFirstSignatureUserId,
+            second_signature_user_id: newSecondSignatureUserId
           };
-          
-          // Update previous state
-          if (newStatus !== 'Approved') {
-            setPreviousStates(prev => new Map(prev.set(chequeId, newStatus)));
-          }
           
           return updated;
         }
@@ -71,6 +90,16 @@ function RouteComponent() {
     } catch (error) {
       console.error("Failed to update status:", error);
     }
+  };
+
+  const getUserName = (userId: number) => {
+    const userNames: Record<number, string> = {
+      1: "System Admin",
+      2: "Manager", 
+      3: "Supervisor",
+      4: "Accountant"
+    };
+    return userNames[userId] || `User ${userId}`;
   };
 
   const handleCheckboxChange = (chequeId: number, checked: boolean) => {
@@ -262,6 +291,10 @@ function RouteComponent() {
                   <th className="p-3 text-left">Date</th>
                   <th className="p-3 text-left">Cheque ID</th>
                   <th className="p-3 text-left">Status</th>
+                  <th className="p-3 text-left">Current Signatures</th>
+                  <th className="p-3 text-left">Required Signatures</th>
+                  <th className="p-3 text-left">Signed By (First)</th>
+                  <th className="p-3 text-left">Signed By (Second)</th>
                   <th className="p-3 text-left">Remarks</th>
                 </tr>
               </thead>
@@ -300,14 +333,28 @@ function RouteComponent() {
                         <option value="Declined">Declined</option>
                       </select>
                     </td>
+                    <td className="p-3 text-sm">
+                      {cheque.current_signatures || 0}
+                    </td>
+                    <td className="p-3 text-sm">
+                      {cheque.amount > 1500 ? 2 : 1}
+                    </td>
+                    <td className="p-3 text-sm">
+                      {cheque.first_signature_user_id ? getUserName(cheque.first_signature_user_id) : '-'}
+                    </td>
+                    <td className="p-3 text-sm">
+                      {cheque.second_signature_user_id ? getUserName(cheque.second_signature_user_id) : '-'}
+                    </td>
                     <td className="p-3">
                       {cheque.status === 'Declined' ? (
-                        <div className="text-sm text-red-600">{cheque.remarks || 'No reason provided'}</div>
+                        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
+                          {cheque.remarks || 'No reason provided'}
+                        </div>
                       ) : (
                         <Input
-                          placeholder="Add remarks..."
+                          placeholder={cheque.status === 'Declined' ? 'Reason required' : 'Add remarks...'}
                           defaultValue={cheque.remarks || ''}
-                          className="text-sm h-8"
+                          className={`text-sm h-8 ${cheque.status === 'Declined' ? 'border-red-300 bg-red-50' : ''}`}
                           onBlur={(e) => {
                             if (e.target.value !== (cheque.remarks || '')) {
                               updateChequeStatus(cheque.cheque_id, cheque.status, e.target.value);
