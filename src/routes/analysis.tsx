@@ -133,7 +133,7 @@ function RouteComponent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.highValueCount}</div>
-            <div className="text-sm text-gray-500">&gt; $10,000</div>
+            <div className="text-sm text-gray-500">> $10,000</div>
           </CardContent>
         </Card>
         
