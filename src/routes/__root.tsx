@@ -9,9 +9,9 @@ export const Route = createRootRoute({
     <>
       <div className="flex min-h-screen">
         <Sidebar />
-        <div className="flex-1 transition-all duration-300 ml-64 md:ml-16">
+        <main className="flex-1 min-w-0 transition-all duration-300 ml-64 md:ml-16">
           <Outlet />
-        </div>
+        </main>
       </div>
       <TanStackRouterDevtools />
     </>

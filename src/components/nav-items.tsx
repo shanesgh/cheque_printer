@@ -35,10 +35,10 @@ export const NavItemComponent: FC<NavItemProps> = ({
       onMouseLeave={() => setShowTooltip(false)}
     >
       <Icon className="size-4" />
-      {isExpanded && <span className="ml-4 text-sm">{label}</span>}
+      {isExpanded && <span className="ml-4 text-sm whitespace-nowrap">{label}</span>}
       {/* {badge && <Badge className="ml-auto bg-red-500">{badge}</Badge>} */}
-      {!isExpanded && showTooltip && (
-        <div className="absolute left-full ml-1 whitespace-no-wrap bg-black text-white text-sm rounded  py-1 w-20 z-20 text-center">
+      {!isExpanded && showTooltip && isActive && (
+        <div className="absolute left-full ml-2 whitespace-nowrap bg-black text-white text-xs rounded px-2 py-1 z-50">
           {label}
         </div>
       )}
