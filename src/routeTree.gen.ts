@@ -16,6 +16,7 @@ import { Route as SettingsImport } from './routes/settings'
 import { Route as DocumentsImport } from './routes/documents'
 import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AnalysisImport } from './routes/analysis'
+import { Route as HelpImport } from './routes/help'
 
 // Create/Update Routes
 
@@ -46,6 +47,12 @@ const DashboardRoute = DashboardImport.update({
 const AnalysisRoute = AnalysisImport.update({
   id: '/analysis',
   path: '/analysis',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const HelpRoute = HelpImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -88,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UploadFileImport
       parentRoute: typeof rootRoute
     }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -99,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof DocumentsRoute
   '/settings': typeof SettingsRoute
   '/upload-file': typeof UploadFileRoute
+  '/help': typeof HelpRoute
 }
 
 export interface FileRoutesByTo {
@@ -107,6 +122,7 @@ export interface FileRoutesByTo {
   '/documents': typeof DocumentsRoute
   '/settings': typeof SettingsRoute
   '/upload-file': typeof UploadFileRoute
+  '/help': typeof HelpRoute
 }
 
 export interface FileRoutesById {
@@ -116,6 +132,7 @@ export interface FileRoutesById {
   '/documents': typeof DocumentsRoute
   '/settings': typeof SettingsRoute
   '/upload-file': typeof UploadFileRoute
+  '/help': typeof HelpRoute
 }
 
 export interface FileRouteTypes {
@@ -126,8 +143,9 @@ export interface FileRouteTypes {
     | '/documents'
     | '/settings'
     | '/upload-file'
+    | '/help'
   fileRoutesByTo: FileRoutesByTo
-  to: '/analysis' | '/dashboard' | '/documents' | '/settings' | '/upload-file'
+  to: '/analysis' | '/dashboard' | '/documents' | '/settings' | '/upload-file' | '/help'
   id:
     | '__root__'
     | '/analysis'
@@ -135,6 +153,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/settings'
     | '/upload-file'
+    | '/help'
   fileRoutesById: FileRoutesById
 }
 
@@ -144,6 +163,7 @@ export interface RootRouteChildren {
   DocumentsRoute: typeof DocumentsRoute
   SettingsRoute: typeof SettingsRoute
   UploadFileRoute: typeof UploadFileRoute
+  HelpRoute: typeof HelpRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -152,6 +172,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentsRoute: DocumentsRoute,
   SettingsRoute: SettingsRoute,
   UploadFileRoute: UploadFileRoute,
+  HelpRoute: HelpRoute,
 }
 
 export const routeTree = rootRoute

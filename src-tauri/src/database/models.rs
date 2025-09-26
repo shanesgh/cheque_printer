@@ -99,6 +99,18 @@ impl From<DataError> for String {
     }
 }
 
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct KanbanNote {
+    pub id: i64,
+    pub title: String,
+    pub description: Option<String>,
+    pub status: String, // "todo", "in_progress", "done"
+    pub note_type: String, // "issue", "feature", "update"
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+    pub position: i32,
+}
+
 
 
 
