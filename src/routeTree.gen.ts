@@ -13,10 +13,10 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as UploadFileImport } from './routes/upload-file'
 import { Route as SettingsImport } from './routes/settings'
+import { Route as HelpImport } from './routes/help'
 import { Route as DocumentsImport } from './routes/documents'
 import { Route as DashboardImport } from './routes/dashboard'
 import { Route as AnalysisImport } from './routes/analysis'
-import { Route as HelpImport } from './routes/help'
 
 // Create/Update Routes
 
@@ -29,6 +29,12 @@ const UploadFileRoute = UploadFileImport.update({
 const SettingsRoute = SettingsImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const HelpRoute = HelpImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -47,12 +53,6 @@ const DashboardRoute = DashboardImport.update({
 const AnalysisRoute = AnalysisImport.update({
   id: '/analysis',
   path: '/analysis',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const HelpRoute = HelpImport.update({
-  id: '/help',
-  path: '/help',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -81,6 +81,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsImport
       parentRoute: typeof rootRoute
     }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpImport
+      parentRoute: typeof rootRoute
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -95,13 +102,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UploadFileImport
       parentRoute: typeof rootRoute
     }
-    '/help': {
-      id: '/help'
-      path: '/help'
-      fullPath: '/help'
-      preLoaderRoute: typeof HelpImport
-      parentRoute: typeof rootRoute
-    }
   }
 }
 
@@ -111,18 +111,18 @@ export interface FileRoutesByFullPath {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/help': typeof HelpRoute
   '/settings': typeof SettingsRoute
   '/upload-file': typeof UploadFileRoute
-  '/help': typeof HelpRoute
 }
 
 export interface FileRoutesByTo {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/help': typeof HelpRoute
   '/settings': typeof SettingsRoute
   '/upload-file': typeof UploadFileRoute
-  '/help': typeof HelpRoute
 }
 
 export interface FileRoutesById {
@@ -130,9 +130,9 @@ export interface FileRoutesById {
   '/analysis': typeof AnalysisRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
+  '/help': typeof HelpRoute
   '/settings': typeof SettingsRoute
   '/upload-file': typeof UploadFileRoute
-  '/help': typeof HelpRoute
 }
 
 export interface FileRouteTypes {
@@ -141,19 +141,25 @@ export interface FileRouteTypes {
     | '/analysis'
     | '/dashboard'
     | '/documents'
+    | '/help'
     | '/settings'
     | '/upload-file'
-    | '/help'
   fileRoutesByTo: FileRoutesByTo
-  to: '/analysis' | '/dashboard' | '/documents' | '/settings' | '/upload-file' | '/help'
+  to:
+    | '/analysis'
+    | '/dashboard'
+    | '/documents'
+    | '/help'
+    | '/settings'
+    | '/upload-file'
   id:
     | '__root__'
     | '/analysis'
     | '/dashboard'
     | '/documents'
+    | '/help'
     | '/settings'
     | '/upload-file'
-    | '/help'
   fileRoutesById: FileRoutesById
 }
 
@@ -161,18 +167,18 @@ export interface RootRouteChildren {
   AnalysisRoute: typeof AnalysisRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
+  HelpRoute: typeof HelpRoute
   SettingsRoute: typeof SettingsRoute
   UploadFileRoute: typeof UploadFileRoute
-  HelpRoute: typeof HelpRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AnalysisRoute: AnalysisRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
+  HelpRoute: HelpRoute,
   SettingsRoute: SettingsRoute,
   UploadFileRoute: UploadFileRoute,
-  HelpRoute: HelpRoute,
 }
 
 export const routeTree = rootRoute
@@ -188,6 +194,7 @@ export const routeTree = rootRoute
         "/analysis",
         "/dashboard",
         "/documents",
+        "/help",
         "/settings",
         "/upload-file"
       ]
@@ -200,6 +207,9 @@ export const routeTree = rootRoute
     },
     "/documents": {
       "filePath": "documents.tsx"
+    },
+    "/help": {
+      "filePath": "help.tsx"
     },
     "/settings": {
       "filePath": "settings.tsx"
