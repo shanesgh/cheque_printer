@@ -1,16 +1,6 @@
 // constants/sidebar.ts
 import { NavSection } from "@/type";
-import {
-  LayoutDashboard,
-  History,
-  BarChart,
-  Wallet,
-  MessageSquare,
-  FolderClosed,
-  Grid,
-  HelpCircle,
-  Settings,
-} from "lucide-react";
+import { LayoutDashboard, History, ChartBar as BarChart, Wallet, MessageSquare, FolderClosed, Grid2x2 as Grid, CircleHelp as HelpCircle, Settings } from "lucide-react";
 
 export const ANIMATION_DURATION = 0.2;
 export const EXPANDED_WIDTH = 240;
