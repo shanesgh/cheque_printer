@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, TrendingUp, Clock, Search, Eye } from "lucide-react";
+import { Calendar, DollarSign, TrendingUp, Clock, Search, Eye, Users, AlertTriangle, FileText, Target } from "lucide-react";
 
 export const Route = createFileRoute("/analysis")({
   component: RouteComponent,
@@ -16,7 +16,6 @@ function RouteComponent() {
   const [cheques, setCheques] = useState<ChequeData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCheque, setSelectedCheque] = useState<number | null>(null);
-  const [auditTrail, setAuditTrail] = useState<AuditTrail[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchCheques = async () => {
@@ -51,13 +50,27 @@ function RouteComponent() {
     });
     
     const highValue = cheques.filter(c => c.amount > 10000);
-    const avgProcessingTime = "2.3 days"; // Mock data
+    const topClients = cheques.reduce((acc: any, c) => {
+      acc[c.client_name] = (acc[c.client_name] || 0) + c.amount;
+      return acc;
+    }, {});
+    
+    const sortedClients = Object.entries(topClients)
+      .sort(([,a]: any, [,b]: any) => b - a)
+      .slice(0, 5);
+    
+    const pendingApproval = cheques.filter(c => c.status === 'Pending');
+    const flaggedCheques = cheques.filter(c => c.amount > 50000);
     
     return {
       monthlyTotal: thisMonth.reduce((sum, c) => sum + c.amount, 0),
       monthlyCount: thisMonth.length,
       highValueCount: highValue.length,
-      avgProcessingTime
+      avgProcessingTime: "2.3 days",
+      topClients: sortedClients,
+      pendingApproval: pendingApproval.length,
+      flaggedCheques: flaggedCheques.length,
+      avgChequeValue: cheques.length ? cheques.reduce((sum, c) => sum + c.amount, 0) / cheques.length : 0
     };
   };
 
@@ -95,7 +108,7 @@ function RouteComponent() {
 
   if (loading) {
     return (
-      <div className="ml-[280px] flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen">
         <div className="text-gray-500">Loading...</div>
       </div>
     );
@@ -104,11 +117,11 @@ function RouteComponent() {
   return (
     <div className="p-3 md:p-6 bg-gray-50 min-h-screen w-full">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Finance Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
       </div>
 
       {/* Analytics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -128,38 +141,90 @@ function RouteComponent() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              High Value
+              Avg Cheque Value
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.highValueCount}</div>
-            <div className="text-sm text-gray-500">&gt; $10,000</div>
+            <div className="text-2xl font-bold">${analytics.avgChequeValue.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
+            <div className="text-sm text-gray-500">average amount</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Avg Processing
+              <AlertTriangle className="h-4 w-4" />
+              Pending Approval
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.avgProcessingTime}</div>
-            <div className="text-sm text-gray-500">processing time</div>
+            <div className="text-2xl font-bold">{analytics.pendingApproval}</div>
+            <div className="text-sm text-gray-500">awaiting approval</div>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              This Month
+              <Target className="h-4 w-4" />
+              Flagged Cheques
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.monthlyCount}</div>
-            <div className="text-sm text-gray-500">new cheques</div>
+            <div className="text-2xl font-bold">{analytics.flaggedCheques}</div>
+            <div className="text-sm text-gray-500">> $50,000</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Client Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Top 5 Clients by Value
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {analytics.topClients.map(([client, amount]: any, index) => (
+                <div key={client} className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-800 text-xs flex items-center justify-center font-medium">
+                      {index + 1}
+                    </div>
+                    <span className="text-sm font-medium">{client}</span>
+                  </div>
+                  <span className="text-sm font-semibold">${amount.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Monthly Trends
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Total Cheques This Month</span>
+                <span className="font-semibold">{analytics.monthlyCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">High Value Cheques</span>
+                <span className="font-semibold">{analytics.highValueCount}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Avg Processing Time</span>
+                <span className="font-semibold">{analytics.avgProcessingTime}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

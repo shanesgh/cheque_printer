@@ -12,6 +12,14 @@ export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
 });
 
+interface DocumentTab {
+  id: number;
+  name: string;
+  owner: string;
+  date: string;
+  cheques: ChequeData[];
+}
+
 function RouteComponent() {
   const [cheques, setCheques] = useState<ChequeData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,12 +27,32 @@ function RouteComponent() {
   const [selectedCheques, setSelectedCheques] = useState<Set<number>>(new Set());
   const [previousStates, setPreviousStates] = useState<Map<number, string>>(new Map());
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<number | 'all'>('all');
+  const [documentTabs, setDocumentTabs] = useState<DocumentTab[]>([]);
 
   const fetchCheques = async () => {
     try {
       const response = await invoke<string>("get_all_cheques");
       const data = JSON.parse(response);
       setCheques(data.cheques || []);
+      
+      // Group cheques by document
+      const grouped = data.cheques?.reduce((acc: any, cheque: ChequeData) => {
+        const key = cheque.document_id;
+        if (!acc[key]) {
+          acc[key] = {
+            id: key,
+            name: cheque.file_name,
+            owner: 'System',
+            date: new Date(cheque.created_at).toLocaleDateString(),
+            cheques: []
+          };
+        }
+        acc[key].cheques.push(cheque);
+        return acc;
+      }, {});
+      
+      setDocumentTabs(Object.values(grouped || {}));
       
       // Store initial states as previous states
       const states = new Map();
@@ -172,7 +200,13 @@ function RouteComponent() {
   };
 
   const getStatusFilteredCheques = () => {
-    const filtered = getFilteredCheques();
+    let filtered = getFilteredCheques();
+    
+    // Filter by active tab
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(c => c.document_id === activeTab);
+    }
+    
     if (statusFilter === 'all') return filtered;
     return filtered.filter(c => c.status.toLowerCase() === statusFilter.toLowerCase());
   };
@@ -211,7 +245,37 @@ function RouteComponent() {
   return (
     <div className="p-3 md:p-6 bg-gray-50 min-h-screen">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Analysis</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+      </div>
+
+      {/* Document Tabs */}
+      <div className="mb-6">
+        <div className="flex space-x-1 border-b">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'all' 
+                ? 'border-blue-500 text-blue-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            All Uploads ({cheques.length})
+          </button>
+          {documentTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.id 
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.name} ({tab.cheques.length})
+              <div className="text-xs text-gray-400">{tab.owner} • {tab.date}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Search */}

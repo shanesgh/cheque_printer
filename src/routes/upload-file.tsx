@@ -7,7 +7,7 @@ export const Route = createFileRoute("/upload-file")({
 
 function RouteComponent() {
   return (
-    <div className="flex justify-center p-3 md:p-10 min-h-screen w-full">
+    <div className="w-full max-w-full p-3 md:p-6">
       <Basic />
     </div>
   );

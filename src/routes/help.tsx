@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Bug, Lightbulb, RefreshCw } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 export const Route = createFileRoute("/help")({
@@ -90,10 +90,28 @@ function RouteComponent() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "issue": return "bg-red-100 text-red-800";
-      case "feature": return "bg-blue-100 text-blue-800";
-      case "update": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "issue": return "bg-red-50 text-red-700 border-red-200";
+      case "feature": return "bg-blue-50 text-blue-700 border-blue-200";
+      case "update": return "bg-green-50 text-green-700 border-green-200";
+      default: return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "issue": return <Bug className="h-3 w-3" />;
+      case "feature": return <Lightbulb className="h-3 w-3" />;
+      case "update": return <RefreshCw className="h-3 w-3" />;
+      default: return null;
+    }
+  };
+
+  const getColumnColor = (status: string) => {
+    switch (status) {
+      case "todo": return "border-t-4 border-t-gray-400";
+      case "in_progress": return "border-t-4 border-t-blue-400";
+      case "done": return "border-t-4 border-t-green-400";
+      default: return "border-t-4 border-t-gray-400";
     }
   };
 
@@ -105,33 +123,38 @@ function RouteComponent() {
   }, []);
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Help & Support</h1>
-        <Button onClick={() => setShowAddForm(true)}>
+    <div className="p-3 md:p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Help & Support</h1>
+          <p className="text-gray-600 mt-1">Track issues, features, and updates</p>
+        </div>
+        <Button onClick={() => setShowAddForm(true)} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
           Add Note
         </Button>
       </div>
 
       {showAddForm && (
-        <Card className="mb-6">
+        <Card className="mb-8 shadow-lg border-0">
           <CardHeader>
-            <CardTitle>Add New Note</CardTitle>
+            <CardTitle className="text-lg">Create New Note</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
               placeholder="Title"
               value={newNote.title}
               onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+              className="border-gray-200 focus:border-blue-500"
             />
             <Input
               placeholder="Description (optional)"
               value={newNote.description}
               onChange={(e) => setNewNote({ ...newNote, description: e.target.value })}
+              className="border-gray-200 focus:border-blue-500"
             />
             <select
-              className="border rounded px-3 py-2 w-full"
+              className="border border-gray-200 rounded-md px-3 py-2 w-full focus:border-blue-500 focus:outline-none"
               value={newNote.note_type}
               onChange={(e) => setNewNote({ ...newNote, note_type: e.target.value as any })}
             >
@@ -140,8 +163,8 @@ function RouteComponent() {
               <option value="update">Update</option>
             </select>
             <div className="flex gap-2">
-              <Button onClick={createNote}>Add</Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
+              <Button onClick={createNote} className="bg-blue-600 hover:bg-blue-700">Create</Button>
+              <Button variant="outline" onClick={() => setShowAddForm(false)} className="border-gray-300">Cancel</Button>
             </div>
           </CardContent>
         </Card>
@@ -150,11 +173,11 @@ function RouteComponent() {
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {["todo", "in_progress", "done"].map((status) => (
-            <Card key={status}>
+            <Card key={status} className={`shadow-lg border-0 ${getColumnColor(status)}`}>
               <CardHeader>
-                <CardTitle className="text-lg">
+                <CardTitle className="text-lg font-semibold">
                   {status === "todo" ? "To Do" : status === "in_progress" ? "In Progress" : "Done"}
-                  <Badge variant="secondary" className="ml-2">
+                  <Badge variant="secondary" className="ml-2 bg-gray-100 text-gray-700">
                     {getColumnNotes(status).length}
                   </Badge>
                 </CardTitle>
@@ -165,7 +188,7 @@ function RouteComponent() {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className="space-y-3 min-h-[200px]"
+                      className="space-y-3 min-h-[300px]"
                     >
                       {getColumnNotes(status).map((note, index) => (
                         <Draggable
@@ -177,32 +200,33 @@ function RouteComponent() {
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`p-3 border rounded-lg bg-white shadow-sm ${
-                                note.status === "done" ? "opacity-60" : ""
+                              className={`p-4 rounded-lg bg-white shadow-md border border-gray-200 hover:shadow-lg transition-shadow ${
+                                note.status === "done" ? "opacity-70" : ""
                               }`}
                             >
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="flex items-center gap-2 mb-3">
                                     <div {...provided.dragHandleProps}>
-                                      <GripVertical className="h-4 w-4 text-gray-400" />
+                                      <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-grab" />
                                     </div>
-                                    <Badge className={getTypeColor(note.note_type)}>
+                                    <Badge className={`${getTypeColor(note.note_type)} border flex items-center gap-1 px-2 py-1`}>
+                                      {getTypeIcon(note.note_type)}
                                       {note.note_type}
                                     </Badge>
                                   </div>
-                                  <h3 className="font-medium text-sm mb-1">{note.title}</h3>
+                                  <h3 className="font-semibold text-sm mb-2 text-gray-900">{note.title}</h3>
                                   {note.description && (
-                                    <p className="text-xs text-gray-600">{note.description}</p>
+                                    <p className="text-xs text-gray-600 leading-relaxed">{note.description}</p>
                                   )}
                                 </div>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => deleteNote(note.id)}
-                                  className="h-6 w-6 p-0"
+                                  className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-colors"
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                             </div>

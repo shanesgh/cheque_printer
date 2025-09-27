@@ -41,7 +41,6 @@ export function TaskTable<TData, TValue>({
   const { setActiveCheques, checkForDuplicates } = useChequeStore();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
-  // const [arrayBuffer, setArrayBuffer] = useState<ArrayBuffer | null>(null);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -111,9 +110,9 @@ export function TaskTable<TData, TValue>({
   };
 
   return (
-    <div className="">
+    <div className="w-full max-w-full overflow-hidden">
       <Toaster position="top-right" reverseOrder={false} />
-      <div className=" flex items-center py-4">
+      <div className="flex items-center py-4">
         <Input
           placeholder="Filter payee..."
           value={
@@ -130,13 +129,13 @@ export function TaskTable<TData, TValue>({
           </Button>
         </div>
       </div>
-      <div className=" rounded-md border">
-        <Table className="">
+      <div className="rounded-md border w-full">
+        <Table className="w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead className=" whitespace-nowrap " key={header.id}>
+                  <TableHead className="whitespace-nowrap" key={header.id}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(
