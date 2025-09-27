@@ -110,9 +110,9 @@ export function TaskTable<TData, TValue>({
   };
 
   return (
-    <div className="w-full max-w-full overflow-hidden">
+    <div className="w-full">
       <Toaster position="top-right" reverseOrder={false} />
-      <div className="flex items-center py-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-4">
         <Input
           placeholder="Filter payee..."
           value={
@@ -121,21 +121,21 @@ export function TaskTable<TData, TValue>({
           onChange={(event) =>
             table.getColumn("client_name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm mr-4"
+          className="w-full sm:max-w-sm"
         />
         <div>
-          <Button onClick={handleSendForProcessing} className="ml-2">
+          <Button onClick={handleSendForProcessing} className="w-full sm:w-auto">
             Send for Processing
           </Button>
         </div>
       </div>
-      <div className="rounded-md border w-full">
-        <Table className="w-full">
+      <div className="rounded-md border w-full overflow-x-auto">
+        <Table className="w-full min-w-[600px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead className="whitespace-nowrap" key={header.id}>
+                  <TableHead className="whitespace-nowrap px-2 md:px-4" key={header.id}>
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -151,12 +151,12 @@ export function TaskTable<TData, TValue>({
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
-                  className="whitespace-nowrap"
+                  className="whitespace-nowrap hover:bg-muted/50"
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="px-2 md:px-4">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -177,43 +177,43 @@ export function TaskTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
-        <div className="flex items-center gap-2 p-4">
+        <div className="flex flex-wrap items-center gap-2 p-4 text-sm">
           <button
-            className="border rounded p-1"
+            className="border rounded p-2 hover:bg-accent transition-colors"
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
           >
             {"<<"}
           </button>
           <button
-            className="border rounded p-1"
+            className="border rounded p-2 hover:bg-accent transition-colors"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
             {"<"}
           </button>
           <button
-            className="border rounded p-1"
+            className="border rounded p-2 hover:bg-accent transition-colors"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
             {">"}
           </button>
           <button
-            className="border rounded p-1"
+            className="border rounded p-2 hover:bg-accent transition-colors"
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
           >
             {">>"}
           </button>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             <div>Page</div>
             <strong>
               {table.getState().pagination.pageIndex + 1} of{" "}
               {table.getPageCount()}
             </strong>
           </span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 whitespace-nowrap">
             | Go to page:
             <input
               type="number"
@@ -224,7 +224,7 @@ export function TaskTable<TData, TValue>({
                 const page = e.target.value ? Number(e.target.value) - 1 : 0;
                 table.setPageIndex(page);
               }}
-              className="border p-1 rounded w-16"
+              className="border p-1 rounded w-16 bg-background"
             />
           </span>
           <select
@@ -232,7 +232,7 @@ export function TaskTable<TData, TValue>({
             onChange={(e) => {
               table.setPageSize(Number(e.target.value));
             }}
-            className="border p-1 rounded"
+            className="border p-1 rounded bg-background"
           >
             {[10, 20, 30, 40, 50].map((pageSize) => (
               <option key={pageSize} value={pageSize}>
@@ -241,7 +241,7 @@ export function TaskTable<TData, TValue>({
             ))}
           </select>
         </div>
-        <div className="p-4">
+        <div className="p-4 text-sm text-muted-foreground">
           Showing {table.getRowModel().rows.length} of {table.getRowCount()}{" "}
           Rows
         </div>

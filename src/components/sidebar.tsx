@@ -35,7 +35,7 @@ export function Sidebar() {
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden"
+        className="fixed top-4 left-4 z-50 md:hidden bg-background/80 backdrop-blur-sm border"
         onClick={toggleMobile}
       >
         {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -44,42 +44,103 @@ export function Sidebar() {
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-200"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={toggleMobile}
         />
       )}
 
+      {/* Mobile Menu Grid */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden bg-background p-4 pt-20">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{firstName} {lastName}</p>
+                <p className="text-sm text-muted-foreground">Administrator</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Sun className="h-4 w-4" />
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={toggleTheme}
+              />
+              <Moon className="h-4 w-4" />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {NAV_SECTIONS.flatMap(section => section.items).map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.route}
+                  onClick={() => {
+                    router.navigate({ to: item.route });
+                    setIsMobileOpen(false);
+                  }}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all duration-200 cursor-pointer",
+                    currentRoute === item.route 
+                      ? "bg-primary text-primary-foreground border-primary" 
+                      : "bg-card hover:bg-accent border-border hover:border-accent-foreground/20"
+                  )}
+                >
+                  <Icon className="h-8 w-8 mb-3" />
+                  <span className="text-sm font-medium text-center">{item.label}</span>
+                  <span className="text-xs text-muted-foreground text-center mt-1">{item.description}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div
         className={cn(
-          "h-screen fixed bg-background border-r flex flex-col transition-all duration-200 ease-in-out z-50",
+          "h-screen fixed bg-sidebar border-r flex flex-col transition-all duration-200 ease-in-out z-30",
           isExpanded ? "w-64" : "w-16",
-          "md:relative md:translate-x-0",
-          isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          "hidden md:flex"
         )}
       >
-        <div className="p-3 space-x-1 flex items-center justify-between">
+        <div className="p-3 flex items-center justify-between">
           <Avatar className={cn("h-10 w-10 shrink-0", !isExpanded && "mx-auto")}>
-            <AvatarImage src="/avatar.png" alt="User" />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn("shrink-0 hidden md:flex", !isExpanded && "mx-auto")}
-            onClick={toggleSidebar}
-          >
-            {isExpanded ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
+          {isExpanded && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              onClick={toggleSidebar}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {!isExpanded && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mx-auto"
+              onClick={toggleSidebar}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Theme Toggle */}
         {isExpanded && (
-          <div className="px-3 py-2 border-b">
+          <div className="px-3 py-2 border-b border-sidebar-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sun className="h-4 w-4" />
-                <span className="text-sm">Dark Mode</span>
+                <span className="text-sm text-sidebar-foreground">Dark Mode</span>
                 <Moon className="h-4 w-4" />
               </div>
               <Switch
@@ -93,7 +154,7 @@ export function Sidebar() {
         <nav className="flex-1">
           {NAV_SECTIONS.map((section) => (
             <div key={section.title} className="px-3 py-2">
-              <h2 className={cn("mb-2 px-2 text-sm font-semibold text-muted-foreground", !isExpanded && "hidden")}>
+              <h2 className={cn("mb-2 px-2 text-sm font-semibold text-sidebar-foreground/70", !isExpanded && "hidden")}>
                 {section.title}
               </h2>
 
@@ -116,6 +177,7 @@ export function Sidebar() {
   );
 }
 
+const router = { navigate: (options: any) => window.location.href = options.to };
 export const useSidebar = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const toggleSidebar = useCallback(() => setIsExpanded(prev => !prev), []);

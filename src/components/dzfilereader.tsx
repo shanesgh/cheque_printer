@@ -53,12 +53,12 @@ const Basic: FC = () => {
   });
 
   return (
-    <div className="w-full max-w-full">
+    <div className="w-full">
       <Toaster position="top-right" reverseOrder={false} />
 
       <div
         {...getRootProps()}
-        className="dropzone flex w-full max-w-2xl h-[150px] mx-auto mb-4 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100"
+        className="dropzone flex w-full h-[150px] mb-4 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50 hover:bg-muted transition-colors duration-200"
       >
         <input {...getInputProps()} id="dropzone-file" className="hidden" />
         <div
@@ -69,7 +69,7 @@ const Basic: FC = () => {
             <span className="font-semibold">Click to upload</span> or drag and
             drop
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted-foreground">
             XLSX, XLS (Excel files only)
           </p>
         </div>
