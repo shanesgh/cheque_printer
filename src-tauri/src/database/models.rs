@@ -106,8 +106,8 @@ pub struct KanbanNote {
     pub description: Option<String>,
     pub status: String, // "todo", "in_progress", "done"
     pub note_type: String, // "issue", "feature", "update"
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
     pub position: i32,
 }
 

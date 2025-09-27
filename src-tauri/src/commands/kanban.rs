@@ -24,14 +24,14 @@ pub async fn create_kanban_note(
     note_type: String,
     pool: State<'_, SqlitePool>,
 ) -> Result<String, String> {
-    let max_position: Option<i32> = sqlx::query_scalar!(
+    let max_position: Option<i64> = sqlx::query_scalar!(
         "SELECT MAX(position) FROM kanban_notes WHERE status = 'todo'"
     )
     .fetch_one(pool.inner())
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
-    let position = max_position.unwrap_or(0) + 1;
+    let position = (max_position.unwrap_or(0) + 1) as i32;
 
     let result = sqlx::query!(
         "INSERT INTO kanban_notes (title, description, status, note_type, position, created_at, updated_at) 
@@ -51,8 +51,8 @@ pub async fn create_kanban_note(
         description,
         status: "todo".to_string(),
         note_type,
-        created_at: chrono::Utc::now().naive_utc(),
-        updated_at: chrono::Utc::now().naive_utc(),
+        created_at: chrono::Utc::now().naive_utc().into(),
+        updated_at: chrono::Utc::now().naive_utc().into(),
         position,
     };
 
