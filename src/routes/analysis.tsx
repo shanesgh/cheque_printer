@@ -115,9 +115,9 @@ function RouteComponent() {
   }
 
   return (
-    <div className="p-3 md:p-6 bg-gray-50 min-h-screen w-full">
+    <div className="p-3 md:p-6 bg-background min-h-screen w-full">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Analytics Dashboard</h1>
       </div>
 
       {/* Analytics Cards */}
@@ -233,7 +233,7 @@ function RouteComponent() {
       <div className="mb-6">
         <div className="flex gap-4 items-center">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search by date, cheque number, or payee..."
               value={searchQuery}
@@ -242,7 +242,7 @@ function RouteComponent() {
             />
           </div>
           <select
-            className="border rounded-md px-3 py-2 bg-white text-sm min-w-[200px]"
+            className="border rounded-md px-3 py-2 bg-background text-sm min-w-[150px] md:min-w-[200px]"
             onChange={(e) => {
               const value = e.target.value;
               if (value === 'high-value') setSearchQuery('>10000');

@@ -243,20 +243,20 @@ function RouteComponent() {
   }
 
   return (
-    <div className="p-3 md:p-6 bg-gray-50 min-h-screen">
+    <div className="p-3 md:p-6 bg-background min-h-screen">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
       </div>
 
       {/* Document Tabs */}
       <div className="mb-6">
-        <div className="flex space-x-1 border-b">
+        <div className="flex space-x-1 border-b overflow-x-auto">
           <button
             onClick={() => setActiveTab('all')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'all' 
-                ? 'border-blue-500 text-blue-600' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-primary text-primary' 
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             All Uploads ({cheques.length})
@@ -267,12 +267,12 @@ function RouteComponent() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.id 
-                  ? 'border-blue-500 text-blue-600' 
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab.name} ({tab.cheques.length})
-              <div className="text-xs text-gray-400">{tab.owner} • {tab.date}</div>
+              <div className="text-xs text-muted-foreground">{tab.owner} • {tab.date}</div>
             </button>
           ))}
         </div>
@@ -291,7 +291,7 @@ function RouteComponent() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setStatusFilter('all')}>
+        <Card className="cursor-pointer hover:bg-accent transition-colors duration-150" onClick={() => setStatusFilter('all')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Total</CardTitle>
           </CardHeader>
@@ -302,34 +302,34 @@ function RouteComponent() {
             </div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setStatusFilter('approved')}>
+        <Card className="cursor-pointer hover:bg-accent transition-colors duration-150" onClick={() => setStatusFilter('approved')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Approved</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600 flex items-center gap-2">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400 flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
               {stats.approved}
             </div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setStatusFilter('declined')}>
+        <Card className="cursor-pointer hover:bg-accent transition-colors duration-150" onClick={() => setStatusFilter('declined')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Declined</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600 flex items-center gap-2">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400 flex items-center gap-2">
               <XCircle className="h-5 w-5" />
               {stats.declined}
             </div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:bg-gray-50" onClick={() => setStatusFilter('pending')}>
+        <Card className="cursor-pointer hover:bg-accent transition-colors duration-150" onClick={() => setStatusFilter('pending')}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Pending</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600 flex items-center gap-2">
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
               <Clock className="h-5 w-5" />
               {stats.pending}
             </div>
@@ -341,8 +341,8 @@ function RouteComponent() {
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto min-w-full">
-            <table className="w-full">
-              <thead className="bg-gray-100">
+            <table className="w-full min-w-[800px]">
+              <thead className="bg-muted">
                 <tr>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm">
                     <Checkbox
@@ -374,7 +374,7 @@ function RouteComponent() {
                     <td className="p-2 md:p-3">
                       <div>
                         <div className="font-medium text-xs md:text-sm">{cheque.client_name}</div>
-                        <div className="text-xs text-gray-500">#{cheque.cheque_number}</div>
+                        <div className="text-xs text-muted-foreground">#{cheque.cheque_number}</div>
                       </div>
                     </td>
                     <td className="p-2 md:p-3 font-semibold text-xs md:text-sm">
