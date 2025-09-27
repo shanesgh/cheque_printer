@@ -261,7 +261,7 @@ function RouteComponent() {
             <option value="">Common Searches</option>
             <option value="this-month">Cheques This Month</option>
             <option value="high-value">High Value Cheques ($10K)</option>
-            <option value="flagged">Flagged Cheques (>$50K)</option>
+            <option value="flagged">Flagged Cheques ($50K)</option>
             <option value="pending">Pending Approval</option>
             <option value="approved">Approved Cheques</option>
             <option value="declined">Declined Cheques</option>
