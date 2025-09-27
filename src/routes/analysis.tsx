@@ -172,7 +172,7 @@ function RouteComponent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.flaggedCheques}</div>
-            <div className="text-sm text-gray-500">> $50,000</div>
+            <div className="text-sm text-gray-500"> $50,000</div>
           </CardContent>
         </Card>
       </div>
