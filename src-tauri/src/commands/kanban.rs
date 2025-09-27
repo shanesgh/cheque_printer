@@ -31,7 +31,7 @@ pub async fn create_kanban_note(
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
-    let position = (max_position.unwrap_or(0) + 1) as i32;
+    let position = max_position.unwrap_or(0) + 1;
 
     let result = sqlx::query!(
         "INSERT INTO kanban_notes (title, description, status, note_type, position, created_at, updated_at) 
@@ -63,7 +63,7 @@ pub async fn create_kanban_note(
 pub async fn update_kanban_note_status(
     id: i64,
     status: String,
-    position: i32,
+    position: i64,
     pool: State<'_, SqlitePool>,
 ) -> Result<(), String> {
     sqlx::query!(
