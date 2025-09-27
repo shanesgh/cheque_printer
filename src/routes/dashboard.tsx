@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, CheckCircle, XCircle, Clock } from "lucide-react";
+import { FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock } from "lucide-react";
 import { ChequeData } from "@/types";
 
 export const Route = createFileRoute("/dashboard")({

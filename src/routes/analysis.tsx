@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar, DollarSign, TrendingUp, Clock, Search, Eye, Users, AlertTriangle, FileText, Target } from "lucide-react";
+import { Calendar, DollarSign, TrendingUp, Clock, Search, Eye, Users, TriangleAlert as AlertTriangle, FileText, Target } from "lucide-react";
 
 export const Route = createFileRoute("/analysis")({
   component: RouteComponent,
