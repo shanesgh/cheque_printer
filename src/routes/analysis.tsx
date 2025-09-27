@@ -231,14 +231,41 @@ function RouteComponent() {
 
       {/* Search */}
       <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search by date, cheque number, or payee..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 w-full"
-          />
+        <div className="flex gap-4 items-center">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Search by date, cheque number, or payee..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 w-full"
+            />
+          </div>
+          <select
+            className="border rounded-md px-3 py-2 bg-white text-sm min-w-[200px]"
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === 'high-value') setSearchQuery('>10000');
+              else if (value === 'this-month') {
+                const now = new Date();
+                const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                setSearchQuery(monthStr);
+              }
+              else if (value === 'pending') setSearchQuery('Pending');
+              else if (value === 'approved') setSearchQuery('Approved');
+              else if (value === 'declined') setSearchQuery('Declined');
+              else if (value === 'flagged') setSearchQuery('>50000');
+              else setSearchQuery('');
+            }}
+          >
+            <option value="">Common Searches</option>
+            <option value="this-month">Cheques This Month</option>
+            <option value="high-value">High Value Cheques (>$10K)</option>
+            <option value="flagged">Flagged Cheques (>$50K)</option>
+            <option value="pending">Pending Approval</option>
+            <option value="approved">Approved Cheques</option>
+            <option value="declined">Declined Cheques</option>
+          </select>
         </div>
       </div>
 
