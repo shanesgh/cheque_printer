@@ -17,7 +17,6 @@ function RouteComponent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCheque, setSelectedCheque] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedChart, setSelectedChart] = useState("table");
   const [queryResult, setQueryResult] = useState<any>(null);
 
