@@ -8,7 +8,7 @@ mod database;
 
 use database::queries::{delete_all_documents, get_all_documents, get_document_file};
 use database::initialize::initialize_database;
-use commands::{cheque_to_text, process_excel_file, process_blob, get_excel_file, rename_document, delete_document, get_all_cheques, update_cheque_status, get_kanban_notes, create_kanban_note, update_kanban_note_status, delete_kanban_note};
+use commands::{cheque_to_text, process_excel_file, process_blob, get_excel_file, rename_document, delete_document, get_all_cheques, update_cheque_status, get_kanban_notes, create_kanban_note, update_kanban_note_status, delete_kanban_note, execute_dynamic_query};
 
 fn main() {
     // Start the tokio runtime
@@ -34,7 +34,7 @@ async fn async_main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .manage(pool) // Manage the database connection pool
-        .invoke_handler(generate_handler![process_excel_file, rename_document,cheque_to_text, process_blob, get_all_documents, get_document_file,delete_all_documents, get_excel_file, delete_document, get_all_cheques, update_cheque_status, get_kanban_notes, create_kanban_note, update_kanban_note_status, delete_kanban_note])
+        .invoke_handler(generate_handler![process_excel_file, rename_document,cheque_to_text, process_blob, get_all_documents, get_document_file,delete_all_documents, get_excel_file, delete_document, get_all_cheques, update_cheque_status, get_kanban_notes, create_kanban_note, update_kanban_note_status, delete_kanban_note, execute_dynamic_query])
         .run(generate_context!())
         .expect("Error while running Tauri application");
 }
