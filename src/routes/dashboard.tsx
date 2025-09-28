@@ -5,8 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { ChequeData } from "@/types";
+import toast from "react-hot-toast";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
@@ -29,6 +34,8 @@ function RouteComponent() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<number | 'all'>('all');
   const [documentTabs, setDocumentTabs] = useState<DocumentTab[]>([]);
+  const [showPrintConfirm, setShowPrintConfirm] = useState(false);
+  const [currentUserId] = useState(1); // Current user ID
 
   const fetchCheques = async () => {
     try {
@@ -179,12 +186,57 @@ function RouteComponent() {
   };
 
   const handleStatusChange = (chequeId: number, newStatus: string) => {
-    if (newStatus === 'Declined') {
-      const remarks = prompt("Please provide a reason for declining:");
-      if (!remarks?.trim()) return;
-      updateChequeStatus(chequeId, newStatus, remarks);
-    } else {
-      updateChequeStatus(chequeId, newStatus);
+    updateChequeStatus(chequeId, newStatus);
+  };
+
+  const updateIssueDate = async (chequeId: number, newDate: Date) => {
+    const dateString = format(newDate, 'yyyy-MM-dd');
+    try {
+      await invoke("update_cheque_issue_date", { 
+        chequeId, 
+        issueDate: dateString 
+      });
+      
+      setCheques(prev => prev.map(c => 
+        c.cheque_id === chequeId ? { ...c, issue_date: dateString } : c
+      ));
+    } catch (error) {
+      console.error("Failed to update issue date:", error);
+    }
+  };
+
+  const handlePrintCheques = () => {
+    const approvedCheques = cheques.filter(c => c.status === 'Approved');
+    const declinedWithoutRemarks = cheques.filter(c => c.status === 'Declined' && !c.remarks?.trim());
+    
+    if (declinedWithoutRemarks.length > 0) {
+      toast.error("All declined cheques must include a remark before printing.");
+      return;
+    }
+    
+    if (approvedCheques.length === 0) {
+      toast.error("No approved cheques to print.");
+      return;
+    }
+    
+    setShowPrintConfirm(true);
+  };
+
+  const confirmPrint = async () => {
+    const approvedCheques = cheques.filter(c => c.status === 'Approved');
+    
+    try {
+      // Lock documents
+      const documentIds = [...new Set(approvedCheques.map(c => c.document_id))];
+      for (const docId of documentIds) {
+        await invoke("lock_document", { documentId: docId });
+      }
+      
+      toast.success(`${approvedCheques.length} cheques sent to printer.`);
+      setShowPrintConfirm(false);
+    } catch (error) {
+      console.error("Failed to print cheques:", error);
+      toast.error("Failed to print cheques.");
     }
   };
 
@@ -287,6 +339,7 @@ function RouteComponent() {
           className="w-full md:max-w-md"
         />
         <Button>Print Cheques</Button>
+        <Button onClick={handlePrintCheques}>Print Cheques</Button>
       </div>
 
       {/* Stats */}
@@ -350,13 +403,34 @@ function RouteComponent() {
                       onCheckedChange={handleMasterSelect}
                     />
                   </th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Client</th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">Amount</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">
+                    <Button variant="ghost" onClick={() => {}}>
+                      Cheque #
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">
+                    <Button variant="ghost" onClick={() => {}}>
+                      Amount
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Issue Date</th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Date</th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Cheque ID</th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">Status</th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Current Signatures</th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Required Signatures</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Client</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">
+                    <Button variant="ghost" onClick={() => {}}>
+                      Status
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Current Sig</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">
+                    <Button variant="ghost" onClick={() => {}}>
+                      Required Sig
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Signed By (First)</th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Signed By (Second)</th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[150px]">Remarks</th>
@@ -372,25 +446,57 @@ function RouteComponent() {
                       />
                     </td>
                     <td className="p-2 md:p-3">
-                      <div>
-                        <div className="font-medium text-xs md:text-sm">{cheque.client_name}</div>
-                        <div className="text-xs text-muted-foreground">#{cheque.cheque_number}</div>
-                      </div>
+                      <div className="font-mono text-xs md:text-sm">{cheque.cheque_number}</div>
                     </td>
                     <td className="p-2 md:p-3 font-semibold text-xs md:text-sm">
                       ${cheque.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="p-2 md:p-3 text-xs md:text-sm">
-                      {cheque.date || cheque.issue_date || 'N/A'}
+                    <td className="p-2 md:p-3">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {cheque.issue_date ? format(new Date(cheque.issue_date), 'PPP') : 'Pick date'}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={cheque.issue_date ? new Date(cheque.issue_date) : undefined}
+                            onSelect={(date) => {
+                              if (date) updateIssueDate(cheque.cheque_id, date);
+                            }}
+                            initialFocus
+                          />
+                          <div className="p-3 border-t">
+                            <Button 
+                              className="w-full" 
+                              onClick={() => {
+                                const tomorrow = new Date();
+                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                updateIssueDate(cheque.cheque_id, tomorrow);
+                              }}
+                            >
+                              Tomorrow
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </td>
                     <td className="p-2 md:p-3 text-xs md:text-sm">
-                      {cheque.cheque_id}
+                      {cheque.date || 'N/A'}
+                    </td>
+                    <td className="p-2 md:p-3">
+                      <div>
+                        <div className="font-medium text-xs md:text-sm">{cheque.client_name}</div>
+                        <div className="text-xs text-muted-foreground">ID: {cheque.cheque_id}</div>
+                      </div>
                     </td>
                     <td className="p-2 md:p-3">
                       <select
                         value={cheque.status}
                         onChange={(e) => handleStatusChange(cheque.cheque_id, e.target.value)}
-                        className="border rounded px-1 md:px-2 py-1 text-xs md:text-sm bg-white w-full"
+                        className="border rounded px-1 md:px-2 py-1 text-xs md:text-sm bg-background w-full"
                       >
                         <option value="Pending">Pending</option>
                         <option value="Approved">Approved</option>
@@ -418,7 +524,7 @@ function RouteComponent() {
                         <Input
                           placeholder={cheque.status === 'Declined' ? 'Reason required' : 'Add remarks...'}
                           defaultValue={cheque.remarks || ''}
-                          className={`text-xs md:text-sm h-6 md:h-8 ${cheque.status === 'Declined' ? 'border-red-300 bg-red-50' : ''}`}
+                          className={`text-xs md:text-sm h-6 md:h-8 ${cheque.status === 'Declined' ? 'border-red-300 bg-red-50 ring-2 ring-red-200' : ''}`}
                           onBlur={(e) => {
                             if (e.target.value !== (cheque.remarks || '')) {
                               updateChequeStatus(cheque.cheque_id, cheque.status, e.target.value);
@@ -434,6 +540,32 @@ function RouteComponent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Print Confirmation Modal */}
+      {showPrintConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Confirm Print</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">Print the following cheques?</p>
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {cheques.filter(c => c.status === 'Approved').map(cheque => (
+                  <div key={cheque.cheque_id} className="flex justify-between text-sm">
+                    <span>{cheque.client_name}</span>
+                    <span>${cheque.amount.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button onClick={confirmPrint}>Print</Button>
+                <Button variant="outline" onClick={() => setShowPrintConfirm(false)}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

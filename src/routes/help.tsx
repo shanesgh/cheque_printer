@@ -17,15 +17,17 @@ interface KanbanNote {
   title: string;
   description?: string;
   status: "todo" | "in_progress" | "done";
-  note_type: "issue" | "feature" | "update";
+  note_type: "issue" | "feature" | "request";
   created_at: string;
   updated_at: string;
   position: number;
+  isEditing?: boolean;
 }
 
 function RouteComponent() {
   const [notes, setNotes] = useState<KanbanNote[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingNote, setEditingNote] = useState<number | null>(null);
   const [newNote, setNewNote] = useState({
     title: "",
     description: "",
@@ -56,6 +58,20 @@ function RouteComponent() {
       fetchNotes();
     } catch (error) {
       console.error("Failed to create note:", error);
+    }
+  };
+
+  const updateNote = async (id: number, title: string, description: string) => {
+    try {
+      await invoke("update_kanban_note", {
+        id,
+        title,
+        description: description || null,
+      });
+      fetchNotes();
+      setEditingNote(null);
+    } catch (error) {
+      console.error("Failed to update note:", error);
     }
   };
 
@@ -92,7 +108,7 @@ function RouteComponent() {
     switch (type) {
       case "issue": return "bg-red-50 text-red-700 border-red-200";
       case "feature": return "bg-blue-50 text-blue-700 border-blue-200";
-      case "update": return "bg-green-50 text-green-700 border-green-200";
+      case "request": return "bg-green-50 text-green-700 border-green-200";
       default: return "bg-gray-50 text-gray-700 border-gray-200";
     }
   };
@@ -101,7 +117,7 @@ function RouteComponent() {
     switch (type) {
       case "issue": return <Bug className="h-3 w-3" />;
       case "feature": return <Lightbulb className="h-3 w-3" />;
-      case "update": return <RefreshCw className="h-3 w-3" />;
+      case "request": return <RefreshCw className="h-3 w-3" />;
       default: return null;
     }
   };
@@ -160,7 +176,7 @@ function RouteComponent() {
             >
               <option value="issue">Issue</option>
               <option value="feature">Feature</option>
-              <option value="update">Update</option>
+              <option value="request">Request</option>
             </select>
             <div className="flex gap-2">
               <Button onClick={createNote}>Create</Button>
@@ -214,8 +230,29 @@ function RouteComponent() {
                                       {getTypeIcon(note.note_type)}
                                       {note.note_type}
                                     </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(note.created_at).toLocaleDateString()}
+                                    </span>
                                   </div>
-                                  <h3 className="font-semibold text-sm mb-2">{note.title}</h3>
+                                  {editingNote === note.id ? (
+                                    <div className="space-y-2">
+                                      <Input
+                                        defaultValue={note.title}
+                                        onBlur={(e) => updateNote(note.id, e.target.value, note.description || '')}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            updateNote(note.id, e.currentTarget.value, note.description || '');
+                                          }
+                                        }}
+                                        className="text-sm"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <h3 
+                                      className="font-semibold text-sm mb-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                      onClick={() => setEditingNote(note.id)}
+                                    >{note.title}</h3>
+                                  )}
                                   {note.description && (
                                     <p className="text-xs text-muted-foreground leading-relaxed">{note.description}</p>
                                   )}

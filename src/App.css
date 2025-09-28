@@ -89,3 +89,38 @@ body {
     transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
+
+/* Dark mode improvements */
+.dark {
+  .bg-white {
+    @apply bg-card;
+  }
+  
+  table {
+    @apply bg-card;
+  }
+  
+  thead {
+    @apply bg-muted;
+  }
+  
+  tbody tr {
+    @apply bg-card hover:bg-muted/50;
+  }
+  
+  .border-gray-100 {
+    @apply border-border;
+  }
+  
+  .text-gray-900 {
+    @apply text-foreground;
+  }
+  
+  .text-gray-600 {
+    @apply text-muted-foreground;
+  }
+  
+  .text-gray-500 {
+    @apply text-muted-foreground;
+  }
+}
