@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, GripVertical, Bug, Lightbulb, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Bug, Lightbulb, RefreshCw, MessageSquare, X, Clock } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 export const Route = createFileRoute("/help")({
@@ -21,13 +21,23 @@ interface KanbanNote {
   created_at: string;
   updated_at: string;
   position: number;
-  isEditing?: boolean;
+}
+
+interface KanbanComment {
+  id: number;
+  note_id: number;
+  comment_text: string;
+  created_at: string;
+  updated_at: string;
 }
 
 function RouteComponent() {
   const [notes, setNotes] = useState<KanbanNote[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingNote, setEditingNote] = useState<number | null>(null);
+  const [selectedNote, setSelectedNote] = useState<number | null>(null);
+  const [comments, setComments] = useState<Record<number, KanbanComment[]>>({});
+  const [newComment, setNewComment] = useState("");
   const [newNote, setNewNote] = useState({
     title: "",
     description: "",
@@ -43,16 +53,26 @@ function RouteComponent() {
     }
   };
 
+  const fetchComments = async (noteId: number) => {
+    try {
+      const response = await invoke<string>("get_kanban_comments", { noteId });
+      const commentList = JSON.parse(response);
+      setComments(prev => ({ ...prev, [noteId]: commentList }));
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
+    }
+  };
+
   const createNote = async () => {
     if (!newNote.title.trim()) return;
-    
+
     try {
       await invoke("create_kanban_note", {
         title: newNote.title,
         description: newNote.description || null,
         noteType: newNote.note_type,
       });
-      
+
       setNewNote({ title: "", description: "", note_type: "issue" });
       setShowAddForm(false);
       fetchNotes();
@@ -84,12 +104,36 @@ function RouteComponent() {
     }
   };
 
+  const addComment = async (noteId: number) => {
+    if (!newComment.trim()) return;
+
+    try {
+      await invoke("create_kanban_comment", {
+        noteId,
+        commentText: newComment,
+      });
+      setNewComment("");
+      fetchComments(noteId);
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+    }
+  };
+
+  const deleteComment = async (commentId: number, noteId: number) => {
+    try {
+      await invoke("delete_kanban_comment", { id: commentId });
+      fetchComments(noteId);
+    } catch (error) {
+      console.error("Failed to delete comment:", error);
+    }
+  };
+
   const onDragEnd = async (result: any) => {
     if (!result.destination) return;
 
     const { source, destination } = result;
     const noteId = parseInt(result.draggableId);
-    
+
     if (source.droppableId !== destination.droppableId) {
       try {
         await invoke("update_kanban_note_status", {
@@ -122,163 +166,276 @@ function RouteComponent() {
     }
   };
 
-  const getColumnColor = (status: string) => {
-    switch (status) {
-      case "todo": return "border-t-4 border-t-gray-400";
-      case "in_progress": return "border-t-4 border-t-blue-400";
-      case "done": return "border-t-4 border-t-green-400";
-      default: return "border-t-4 border-t-gray-400";
-    }
+  const getColumnNotes = (status: string) =>
+    notes.filter(note => note.status === status).sort((a, b) => a.position - b.position);
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const getColumnNotes = (status: string) => 
-    notes.filter(note => note.status === status).sort((a, b) => a.position - b.position);
+  const openNoteDetail = (noteId: number) => {
+    setSelectedNote(noteId);
+    fetchComments(noteId);
+  };
 
   useEffect(() => {
     fetchNotes();
   }, []);
 
+  const selectedNoteData = notes.find(n => n.id === selectedNote);
+
   return (
-    <div className="p-3 md:p-6 bg-gradient-to-br from-background to-muted/20 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Help & Support</h1>
-          <p className="text-muted-foreground mt-1">Track issues, features, and updates</p>
+    <div className="h-screen flex flex-col overflow-hidden bg-[#0079bf]">
+      <div className="flex items-center justify-between px-4 py-3 bg-[rgba(0,0,0,0.24)]">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-white">Help & Support Board</h1>
         </div>
-        <Button onClick={() => setShowAddForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Note
+        <Button
+          onClick={() => setShowAddForm(true)}
+          className="bg-[rgba(255,255,255,0.24)] hover:bg-[rgba(255,255,255,0.32)] text-white border-0 shadow-none"
+          size="sm"
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add Card
         </Button>
       </div>
 
-      {showAddForm && (
-        <Card className="mb-8 shadow-lg border-0">
-          <CardHeader>
-            <CardTitle className="text-lg">Create New Note</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              placeholder="Title"
-              value={newNote.title}
-              onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-              className="border-gray-200 focus:border-blue-500"
-            />
-            <Input
-              placeholder="Description (optional)"
-              value={newNote.description}
-              onChange={(e) => setNewNote({ ...newNote, description: e.target.value })}
-              className="focus:border-primary"
-            />
-            <select
-              className="border rounded-md px-3 py-2 w-full bg-background focus:border-primary focus:outline-none"
-              value={newNote.note_type}
-              onChange={(e) => setNewNote({ ...newNote, note_type: e.target.value as any })}
-            >
-              <option value="issue">Issue</option>
-              <option value="feature">Feature</option>
-              <option value="request">Request</option>
-            </select>
-            <div className="flex gap-2">
-              <Button onClick={createNote}>Create</Button>
-              <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {["todo", "in_progress", "done"].map((status) => (
-            <Card key={status} className={`shadow-lg border-0 ${getColumnColor(status)}`}>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">
-                  {status === "todo" ? "To Do" : status === "in_progress" ? "In Progress" : "Done"}
-                  <Badge variant="secondary" className="ml-2">
-                    {getColumnNotes(status).length}
-                  </Badge>
-                </CardTitle>
+      <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 py-4">
+        {showAddForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAddForm(false)}>
+            <Card className="w-full max-w-md shadow-2xl border-0" onClick={(e) => e.stopPropagation()}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Add Card</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Droppable droppableId={status}>
-                  {(provided) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className="space-y-3 min-h-[300px]"
-                    >
-                      {getColumnNotes(status).map((note, index) => (
-                        <Draggable
-                          key={note.id}
-                          draggableId={note.id.toString()}
-                          index={index}
+              <CardContent className="space-y-3">
+                <Input
+                  placeholder="Enter a title..."
+                  value={newNote.title}
+                  onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                  className="border-gray-300"
+                  autoFocus
+                />
+                <textarea
+                  placeholder="Add description..."
+                  value={newNote.description}
+                  onChange={(e) => setNewNote({ ...newNote, description: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 min-h-[80px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+                <select
+                  className="border border-gray-300 rounded-md px-3 py-2 w-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newNote.note_type}
+                  onChange={(e) => setNewNote({ ...newNote, note_type: e.target.value as any })}
+                >
+                  <option value="issue">Issue</option>
+                  <option value="feature">Feature</option>
+                  <option value="request">Request</option>
+                </select>
+                <div className="flex gap-2 pt-2">
+                  <Button onClick={createNote} className="bg-[#0079bf] hover:bg-[#026aa7] text-white" size="sm">Add Card</Button>
+                  <Button variant="ghost" onClick={() => setShowAddForm(false)} size="sm">Cancel</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {selectedNote && selectedNoteData && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedNote(null)}>
+            <Card className="w-full max-w-2xl shadow-2xl border-0 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <CardHeader className="pb-3 sticky top-0 bg-white z-10 border-b">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className={`${getTypeColor(selectedNoteData.note_type)} border-0 flex items-center gap-1 px-2 py-1`}>
+                        {getTypeIcon(selectedNoteData.note_type)}
+                        <span className="capitalize">{selectedNoteData.note_type}</span>
+                      </Badge>
+                    </div>
+                    <CardTitle className="text-xl">{selectedNoteData.title}</CardTitle>
+                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatDateTime(selectedNoteData.created_at)}</span>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedNote(null)} className="h-8 w-8 p-0">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {selectedNoteData.description && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold mb-2">Description</h3>
+                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{selectedNoteData.description}</p>
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="h-4 w-4" />
+                    <h3 className="text-sm font-semibold">Comments</h3>
+                  </div>
+
+                  <div className="space-y-3 mb-4">
+                    {comments[selectedNote]?.map((comment) => (
+                      <div key={comment.id} className="bg-gray-50 p-3 rounded border flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-800">{comment.comment_text}</p>
+                          <span className="text-xs text-gray-500 mt-1 block">{formatDateTime(comment.created_at)}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteComment(comment.id, selectedNote)}
+                          className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600"
                         >
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`p-4 rounded-lg bg-card shadow-md border hover:shadow-lg transition-all duration-150 ${
-                                note.status === "done" ? "opacity-70" : ""
-                              }`}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <div {...provided.dragHandleProps}>
-                                      <GripVertical className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-grab transition-colors duration-150" />
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add a comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          addComment(selectedNote);
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button onClick={() => addComment(selectedNote)} size="sm">Add</Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="flex gap-3 h-full">
+            {["todo", "in_progress", "done"].map((status) => (
+              <div key={status} className="flex-shrink-0 w-[272px] flex flex-col max-h-full">
+                <div className="bg-[#ebecf0] rounded-lg flex flex-col max-h-full shadow-sm">
+                  <div className="px-3 py-2 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-800">
+                      {status === "todo" ? "To Do" : status === "in_progress" ? "In Progress" : "Done"}
+                    </h3>
+                    <Badge variant="secondary" className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0">
+                      {getColumnNotes(status).length}
+                    </Badge>
+                  </div>
+                  <Droppable droppableId={status}>
+                    {(provided, snapshot) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className={`flex-1 overflow-y-auto px-2 pb-2 space-y-2 ${
+                          snapshot.isDraggingOver ? 'bg-[#dfe1e6]' : ''
+                        }`}
+                        style={{ minHeight: '100px' }}
+                      >
+                        {getColumnNotes(status).map((note, index) => (
+                          <Draggable
+                            key={note.id}
+                            draggableId={note.id.toString()}
+                            index={index}
+                          >
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer p-2 ${
+                                  snapshot.isDragging ? 'rotate-3 shadow-lg' : ''
+                                }`}
+                                onClick={() => openNoteDetail(note.id)}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                      <Badge className={`${getTypeColor(note.note_type)} border-0 flex items-center gap-1 px-1.5 py-0 text-xs`}>
+                                        {getTypeIcon(note.note_type)}
+                                        <span className="capitalize">{note.note_type}</span>
+                                      </Badge>
                                     </div>
-                                    <Badge className={`${getTypeColor(note.note_type)} border flex items-center gap-1 px-2 py-1 transition-colors duration-150`}>
-                                      {getTypeIcon(note.note_type)}
-                                      {note.note_type}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                      {new Date(note.created_at).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  {editingNote === note.id ? (
-                                    <div className="space-y-2">
+                                    {editingNote === note.id ? (
                                       <Input
                                         defaultValue={note.title}
                                         onBlur={(e) => updateNote(note.id, e.target.value, note.description || '')}
+                                        onClick={(e) => e.stopPropagation()}
                                         onKeyDown={(e) => {
                                           if (e.key === 'Enter') {
                                             updateNote(note.id, e.currentTarget.value, note.description || '');
                                           }
+                                          if (e.key === 'Escape') {
+                                            setEditingNote(null);
+                                          }
                                         }}
-                                        className="text-sm"
+                                        className="text-sm h-7 px-2"
+                                        autoFocus
                                       />
+                                    ) : (
+                                      <h4
+                                        className="text-sm font-medium text-gray-800 mb-1 break-words"
+                                      >
+                                        {note.title}
+                                      </h4>
+                                    )}
+                                    {note.description && (
+                                      <p className="text-xs text-gray-600 line-clamp-2 mb-2">{note.description}</p>
+                                    )}
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                                          <Clock className="h-3 w-3" />
+                                          {formatDateTime(note.created_at)}
+                                        </span>
+                                        {comments[note.id]?.length > 0 && (
+                                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                                            <MessageSquare className="h-3 w-3" />
+                                            {comments[note.id].length}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
-                                  ) : (
-                                    <h3 
-                                      className="font-semibold text-sm mb-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
-                                      onClick={() => setEditingNote(note.id)}
-                                    >{note.title}</h3>
-                                  )}
-                                  {note.description && (
-                                    <p className="text-xs text-muted-foreground leading-relaxed">{note.description}</p>
-                                  )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteNote(note.id);
+                                    }}
+                                    className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteNote(note.id)}
-                                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors duration-150"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
                               </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </DragDropContext>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DragDropContext>
+      </div>
     </div>
   );
 }

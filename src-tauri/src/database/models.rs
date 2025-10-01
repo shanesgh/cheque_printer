@@ -111,6 +111,15 @@ pub struct KanbanNote {
     pub position: i64,
 }
 
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct KanbanComment {
+    pub id: i64,
+    pub note_id: i64,
+    pub comment_text: String,
+    pub created_at: Option<NaiveDateTime>,
+    pub updated_at: Option<NaiveDateTime>,
+}
+
 
 
 
