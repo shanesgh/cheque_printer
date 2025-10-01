@@ -19,4 +19,6 @@ export interface ChequeData {
   current_signatures?: number;
   first_signature_user_id?: number;
   second_signature_user_id?: number;
+  print_count?: number;
+  is_locked?: boolean;
 }

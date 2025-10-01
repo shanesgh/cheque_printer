@@ -30,7 +30,8 @@ pub struct ChequeWithDocument {
     pub document_id: i64,
     pub file_name: String,
     pub created_at: NaiveDateTime,
-    
+    pub is_locked: Option<i64>,
+
     // Cheque fields (all optional because of LEFT JOIN)
     pub cheque_id: Option<i64>,
     pub cheque_number: Option<String>,
@@ -43,6 +44,7 @@ pub struct ChequeWithDocument {
     pub current_signatures: Option<i64>,
     pub first_signature_user_id: Option<i64>,
     pub second_signature_user_id: Option<i64>,
+    pub print_count: Option<i64>,
 }
 
 #[derive(Debug, thiserror::Error, Serialize, Deserialize)]

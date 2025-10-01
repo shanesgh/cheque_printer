@@ -5,7 +5,7 @@ import { OllamaService } from "@/services/ollamaService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Download, Loader as Loader2, DollarSign, TrendingUp, AlertTriangle, Target } from "lucide-react";
+import { Search, Download, Loader as Loader2, DollarSign, TrendingUp, TriangleAlert as AlertTriangle, Target } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export const Route = createFileRoute("/analysis")({
@@ -40,6 +40,7 @@ function RouteComponent() {
     const currentYear = new Date().getFullYear();
     
     const monthlyData = cheques.filter(c => {
+      if (!c.date) return false;
       const chequeDate = new Date(c.date);
       return chequeDate.getMonth() === currentMonth && chequeDate.getFullYear() === currentYear;
     });
@@ -57,31 +58,6 @@ function RouteComponent() {
       pendingApproval,
       flaggedCheques
     };
-  };
-
-  const updateChequeStatus = async (chequeId: number, newStatus: string, remarks?: string) => {
-    try {
-      await invoke("update_cheque_status", { 
-        chequeId, 
-        newStatus,
-        ...(remarks && { remarks })
-      });
-      
-      setCheques(prev => prev.map(c => {
-        if (c.cheque_id === chequeId) {
-          const updated = { 
-            ...c, 
-            status: newStatus,
-            ...(remarks && { remarks })
-          };
-          
-          return updated;
-        }
-        return c;
-      }));
-    } catch (error) {
-      console.error("Failed to update cheque status:", error);
-    }
   };
 
   const handleSearch = async () => {
@@ -138,7 +114,7 @@ function RouteComponent() {
                 dataKey={Object.keys(data[0] || {})[1] || 'value'}
                 label
               >
-                {data.map((entry: any, index: number) => (
+                {data.map((_entry: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                 ))}
               </Pie>

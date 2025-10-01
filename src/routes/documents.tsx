@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { invoke } from "@tauri-apps/api/core";
 import toast, { Toaster } from "react-hot-toast";
-import { Search, MoreVertical, Download, Edit, Delete } from "lucide-react";
+import { Search, MoveVertical as MoreVertical, Download, CreditCard as Edit, Delete } from "lucide-react";
 import { Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,6 +23,7 @@ interface Document {
   file_name: string;
   created_at: string;
   file_data: number[];
+  is_locked?: number;
 }
 
 function RouteComponent() {
@@ -165,6 +166,12 @@ function RouteComponent() {
   };
 
   const handleDelete = async (documentId: number) => {
+    const document = documents.find(doc => doc.id === documentId);
+    if (document?.is_locked === 1) {
+      toast.error("This document is locked and cannot be deleted. Cheques have been printed from this file.");
+      return;
+    }
+
     const toastId = toast.loading("Deleting file...");
 
     try {
@@ -239,8 +246,11 @@ function RouteComponent() {
               >
                 <div className="col-span-1 md:col-span-6 flex items-center space-x-3">
                   <AiOutlineFileExcel className="text-green-600 text-xl flex-shrink-0" />
-                  {/* Show lock icon if file has edited cheques */}
-                  <Lock className="text-gray-400 text-sm flex-shrink-0" />
+                  {doc.is_locked === 1 && (
+                    <div title="Document is locked - cheques have been printed">
+                      <Lock className="text-red-600 h-4 w-4 flex-shrink-0" />
+                    </div>
+                  )}
                   <span className="text-xs md:text-sm text-gray-900 truncate">
                     {doc.file_name}
                   </span>

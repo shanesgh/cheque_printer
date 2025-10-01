@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock } from "lucide-react";
+import { FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock, ArrowUpDown } from "lucide-react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ChequeData } from "@/types";
 import toast from "react-hot-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
@@ -35,7 +36,10 @@ function RouteComponent() {
   const [activeTab, setActiveTab] = useState<number | 'all'>('all');
   const [documentTabs, setDocumentTabs] = useState<DocumentTab[]>([]);
   const [showPrintConfirm, setShowPrintConfirm] = useState(false);
-  const [currentUserId] = useState(1); // Current user ID
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [pendingDeclineChequeId, setPendingDeclineChequeId] = useState<number | null>(null);
+  const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'} | null>(null);
 
   const fetchCheques = async () => {
     try {
@@ -83,21 +87,20 @@ function RouteComponent() {
       let newSecondSignatureUserId = currentCheque?.second_signature_user_id;
       
       if (newStatus === 'Approved' && currentCheque?.status !== 'Approved') {
-        // Increment signatures when approving
-        newCurrentSignatures = Math.min((newCurrentSignatures || 0) + 1, currentCheque?.amount > 1500 ? 2 : 1);
+        const amount = currentCheque?.amount ?? 0;
+        newCurrentSignatures = Math.min((newCurrentSignatures || 0) + 1, amount > 1500 ? 2 : 1);
         if (!newFirstSignatureUserId) {
-          newFirstSignatureUserId = 1; // Current user ID
-        } else if (!newSecondSignatureUserId && currentCheque?.amount > 1500) {
-          newSecondSignatureUserId = 1; // Current user ID
+          newFirstSignatureUserId = 1;
+        } else if (!newSecondSignatureUserId && amount > 1500) {
+          newSecondSignatureUserId = 1;
         }
       } else if (newStatus !== 'Approved' && currentCheque?.status === 'Approved') {
-        // Decrement signatures when unapproving
         newCurrentSignatures = Math.max((newCurrentSignatures || 0) - 1, 0);
         if (newCurrentSignatures === 0) {
-          newFirstSignatureUserId = null;
-          newSecondSignatureUserId = null;
+          newFirstSignatureUserId = undefined;
+          newSecondSignatureUserId = undefined;
         } else if (newCurrentSignatures === 1) {
-          newSecondSignatureUserId = null;
+          newSecondSignatureUserId = undefined;
         }
       }
 
@@ -186,7 +189,25 @@ function RouteComponent() {
   };
 
   const handleStatusChange = (chequeId: number, newStatus: string) => {
-    updateChequeStatus(chequeId, newStatus);
+    if (newStatus === 'Declined') {
+      setPendingDeclineChequeId(chequeId);
+      setShowDeclineDialog(true);
+    } else {
+      updateChequeStatus(chequeId, newStatus);
+    }
+  };
+
+  const confirmDecline = async () => {
+    if (!declineReason.trim()) {
+      toast.error("Please provide a reason for declining.");
+      return;
+    }
+    if (pendingDeclineChequeId) {
+      await updateChequeStatus(pendingDeclineChequeId, 'Declined', declineReason);
+      setShowDeclineDialog(false);
+      setDeclineReason("");
+      setPendingDeclineChequeId(null);
+    }
   };
 
   const updateIssueDate = async (chequeId: number, newDate: Date) => {
@@ -224,16 +245,31 @@ function RouteComponent() {
 
   const confirmPrint = async () => {
     const approvedCheques = cheques.filter(c => c.status === 'Approved');
-    
+    const printableCheques = approvedCheques.filter(c => {
+      const required = c.amount > 1500 ? 2 : 1;
+      return (c.current_signatures || 0) >= required;
+    });
+
+    if (printableCheques.length === 0) {
+      toast.error("No cheques available to print.");
+      return;
+    }
+
     try {
+      // Increment print count for each cheque
+      for (const cheque of printableCheques) {
+        await invoke("increment_print_count", { chequeId: cheque.cheque_id });
+      }
+
       // Lock documents
-      const documentIds = [...new Set(approvedCheques.map(c => c.document_id))];
+      const documentIds = [...new Set(printableCheques.map(c => c.document_id))];
       for (const docId of documentIds) {
         await invoke("lock_document", { documentId: docId });
       }
-      
-      toast.success(`${approvedCheques.length} cheques sent to printer.`);
+
+      toast.success(`${printableCheques.length} cheque(s) sent to printer.`);
       setShowPrintConfirm(false);
+      fetchCheques();
     } catch (error) {
       console.error("Failed to print cheques:", error);
       toast.error("Failed to print cheques.");
@@ -251,16 +287,51 @@ function RouteComponent() {
     );
   };
 
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedCheques = (cheques: ChequeData[]) => {
+    if (!sortConfig) return cheques;
+
+    return [...cheques].sort((a, b) => {
+      const aValue = (a as any)[sortConfig.key];
+      const bValue = (b as any)[sortConfig.key];
+
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.direction === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+
+      return 0;
+    });
+  };
+
   const getStatusFilteredCheques = () => {
     let filtered = getFilteredCheques();
-    
+
     // Filter by active tab
     if (activeTab !== 'all') {
       filtered = filtered.filter(c => c.document_id === activeTab);
     }
-    
-    if (statusFilter === 'all') return filtered;
-    return filtered.filter(c => c.status.toLowerCase() === statusFilter.toLowerCase());
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(c => c.status.toLowerCase() === statusFilter.toLowerCase());
+    }
+
+    return getSortedCheques(filtered);
   };
 
   const getRowColor = (status: string) => {
@@ -271,16 +342,21 @@ function RouteComponent() {
     }
   };
 
+  const getActiveTabCheques = () => {
+    if (activeTab === 'all') return cheques;
+    return cheques.filter(c => c.document_id === activeTab);
+  };
+
+  const activeTabCheques = getActiveTabCheques();
   const stats = {
-    total: cheques.length,
-    approved: cheques.filter(c => c.status === 'Approved').length,
-    declined: cheques.filter(c => c.status === 'Declined').length,
-    pending: cheques.filter(c => c.status === 'Pending').length,
+    total: activeTabCheques.length,
+    approved: activeTabCheques.filter(c => c.status === 'Approved').length,
+    declined: activeTabCheques.filter(c => c.status === 'Declined').length,
+    pending: activeTabCheques.filter(c => c.status === 'Pending').length,
   };
 
   const filteredCheques = getStatusFilteredCheques();
   const allSelected = filteredCheques.length > 0 && filteredCheques.every(c => selectedCheques.has(c.cheque_id));
-  const someSelected = filteredCheques.some(c => selectedCheques.has(c.cheque_id));
 
   useEffect(() => {
     fetchCheques();
@@ -338,7 +414,6 @@ function RouteComponent() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full md:max-w-md"
         />
-        <Button>Print Cheques</Button>
         <Button onClick={handlePrintCheques}>Print Cheques</Button>
       </div>
 
@@ -403,47 +478,88 @@ function RouteComponent() {
                       onCheckedChange={handleMasterSelect}
                     />
                   </th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('date')}>
+                      Date
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">
-                    <Button variant="ghost" onClick={() => {}}>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('cheque_number')}>
                       Cheque #
                       <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   </th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">
-                    <Button variant="ghost" onClick={() => {}}>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('amount')}>
                       Amount
                       <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   </th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Issue Date</th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Date</th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Client</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('issue_date')}>
+                      Issue Date
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('client_name')}>
+                      Client
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[100px]">
-                    <Button variant="ghost" onClick={() => {}}>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('status')}>
                       Status
                       <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   </th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">Current Sig</th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">
-                    <Button variant="ghost" onClick={() => {}}>
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('current_signatures')}>
+                      Current Sig
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('required_signatures')}>
                       Required Sig
                       <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   </th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Signed By (First)</th>
-                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">Signed By (Second)</th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('first_signature_user_id')}>
+                      Signed By (First)
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[120px]">
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('second_signature_user_id')}>
+                      Signed By (Second)
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
+                  <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[80px]">
+                    <Button variant="ghost" size="sm" onClick={() => handleSort('print_count')}>
+                      Print Count
+                      <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </th>
                   <th className="p-2 md:p-3 text-left text-xs md:text-sm min-w-[150px]">Remarks</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCheques.map((cheque) => (
+                {filteredCheques.map((cheque) => {
+                  const requiredSigs = cheque.amount > 1500 ? 2 : 1;
+                  return (
                   <tr key={cheque.cheque_id} className={`border-b ${getRowColor(cheque.status)}`}>
                     <td className="p-2 md:p-3">
                       <Checkbox
                         checked={selectedCheques.has(cheque.cheque_id)}
                         onCheckedChange={(checked) => handleCheckboxChange(cheque.cheque_id, !!checked)}
                       />
+                    </td>
+                    <td className="p-2 md:p-3 text-xs md:text-sm">
+                      {cheque.date ? format(new Date(cheque.date), 'MMM dd, yyyy') : 'N/A'}
                     </td>
                     <td className="p-2 md:p-3">
                       <div className="font-mono text-xs md:text-sm">{cheque.cheque_number}</div>
@@ -454,9 +570,9 @@ function RouteComponent() {
                     <td className="p-2 md:p-3">
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {cheque.issue_date ? format(new Date(cheque.issue_date), 'PPP') : 'Pick date'}
+                          <Button variant="outline" size="sm" className="justify-start text-left font-normal text-xs">
+                            <CalendarIcon className="mr-2 h-3 w-3" />
+                            {cheque.issue_date ? format(new Date(cheque.issue_date), 'MMM dd, yyyy') : 'Pick date'}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -468,23 +584,8 @@ function RouteComponent() {
                             }}
                             initialFocus
                           />
-                          <div className="p-3 border-t">
-                            <Button 
-                              className="w-full" 
-                              onClick={() => {
-                                const tomorrow = new Date();
-                                tomorrow.setDate(tomorrow.getDate() + 1);
-                                updateIssueDate(cheque.cheque_id, tomorrow);
-                              }}
-                            >
-                              Tomorrow
-                            </Button>
-                          </div>
                         </PopoverContent>
                       </Popover>
-                    </td>
-                    <td className="p-2 md:p-3 text-xs md:text-sm">
-                      {cheque.date || 'N/A'}
                     </td>
                     <td className="p-2 md:p-3">
                       <div>
@@ -507,13 +608,16 @@ function RouteComponent() {
                       {cheque.current_signatures || 0}
                     </td>
                     <td className="p-2 md:p-3 text-xs md:text-sm">
-                      {cheque.amount > 1500 ? 2 : 1}
+                      {requiredSigs}
                     </td>
                     <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.first_signature_user_id ? getUserName(cheque.first_signature_user_id) : '-'}
                     </td>
                     <td className="p-2 md:p-3 text-xs md:text-sm">
                       {cheque.second_signature_user_id ? getUserName(cheque.second_signature_user_id) : '-'}
+                    </td>
+                    <td className="p-2 md:p-3 text-xs md:text-sm text-center">
+                      {(cheque as any).print_count || 0}
                     </td>
                     <td className="p-2 md:p-3">
                       {cheque.status === 'Declined' ? (
@@ -534,7 +638,8 @@ function RouteComponent() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -542,30 +647,119 @@ function RouteComponent() {
       </Card>
 
       {/* Print Confirmation Modal */}
-      {showPrintConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Confirm Print</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">Print the following cheques?</p>
-              <div className="max-h-60 overflow-y-auto space-y-2">
-                {cheques.filter(c => c.status === 'Approved').map(cheque => (
-                  <div key={cheque.cheque_id} className="flex justify-between text-sm">
-                    <span>{cheque.client_name}</span>
-                    <span>${cheque.amount.toLocaleString()}</span>
+      {showPrintConfirm && (() => {
+        const approvedCheques = cheques.filter(c => c.status === 'Approved');
+        const printableCheques = approvedCheques.filter(c => {
+          const required = c.amount > 1500 ? 2 : 1;
+          return (c.current_signatures || 0) >= required;
+        });
+        const missingSignatures = approvedCheques.filter(c => {
+          const required = c.amount > 1500 ? 2 : 1;
+          return (c.current_signatures || 0) < required;
+        });
+        const totalAmount = printableCheques.reduce((sum, c) => sum + c.amount, 0);
+
+        return (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Print Cheques</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <div className="text-lg font-semibold mb-2">Total Amount: ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                  <div className="text-sm text-muted-foreground mb-4">{printableCheques.length} cheque(s) ready to print</div>
+                </div>
+
+                {printableCheques.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="font-semibold mb-3">Cheques to Print:</h3>
+                    <div className="max-h-60 overflow-y-auto space-y-2 border rounded p-3">
+                      {printableCheques.map(cheque => (
+                        <div key={cheque.cheque_id} className="flex justify-between items-center text-sm py-2 border-b last:border-0">
+                          <div className="flex-1">
+                            <div className="font-medium">{cheque.client_name}</div>
+                            <div className="text-xs text-muted-foreground">Cheque #{cheque.cheque_number}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">${cheque.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                            <div className="text-xs text-green-600">{cheque.current_signatures}/{cheque.amount > 1500 ? 2 : 1} signatures</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button onClick={confirmPrint}>Print</Button>
-                <Button variant="outline" onClick={() => setShowPrintConfirm(false)}>Cancel</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                )}
+
+                {missingSignatures.length > 0 && (
+                  <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded p-4">
+                    <h3 className="font-semibold text-yellow-800 mb-2">Excluded from Print ({missingSignatures.length} cheque(s)):</h3>
+                    <p className="text-sm text-yellow-700 mb-3">The following approved cheques will NOT be printed due to missing signatures:</p>
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {missingSignatures.map(cheque => {
+                        const required = cheque.amount > 1500 ? 2 : 1;
+                        const current = cheque.current_signatures || 0;
+                        return (
+                          <div key={cheque.cheque_id} className="flex justify-between items-center text-sm py-2 border-b border-yellow-200 last:border-0">
+                            <div className="flex-1">
+                              <div className="font-medium text-yellow-900">{cheque.client_name}</div>
+                              <div className="text-xs text-yellow-700">Cheque #{cheque.cheque_number}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold text-yellow-900">${cheque.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                              <div className="text-xs text-red-600">{current}/{required} signatures (missing {required - current})</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 mt-6">
+                  <Button onClick={confirmPrint} disabled={printableCheques.length === 0}>
+                    Print {printableCheques.length} Cheque(s)
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowPrintConfirm(false)}>Cancel</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
+
+      {/* Decline Reason Dialog */}
+      <Dialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Decline Cheque</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for declining this cheque. This information is required and will be saved for audit purposes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <textarea
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              placeholder="Enter reason for declining..."
+              className="w-full border border-gray-300 rounded-md px-3 py-2 min-h-[100px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowDeclineDialog(false);
+              setDeclineReason("");
+              setPendingDeclineChequeId(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={confirmDecline} disabled={!declineReason.trim()}>
+              Confirm Decline
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

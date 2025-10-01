@@ -19,7 +19,7 @@ export const NavItemComponent: FC<NavItemProps> = ({
   route,
   isExpanded,
   isActive,
-  badge,
+  badge: _badge,
   onClick,
 }) => {
   const navigate = useNavigate();

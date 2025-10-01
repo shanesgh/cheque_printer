@@ -80,17 +80,28 @@ pub async fn delete_metadata(pool: &SqlitePool, id: i64) -> Result<()> {
 
 #[tauri::command]
 pub async fn get_all_documents(pool: State<'_, SqlitePool>) -> Result<String> {
-    let documents: Vec<Document> = sqlx::query_as!(
-        Document,
-        "SELECT id, file_name, file_data, created_at FROM documents"
+    let documents = sqlx::query!(
+        "SELECT id, file_name, file_data, created_at, is_locked FROM documents"
     )
     .fetch_all(pool.inner())
-    .await?; // Automatically converts `sqlx::Error` into `DataError::Database`
+    .await?;
 
-    // Serialize the documents into a JSON string
-    let response: String = serde_json::to_string(&documents)?; // Automatically converts `serde_json::Error` into `DataError::Serialization`
+    let response: Vec<serde_json::Value> = documents
+        .into_iter()
+        .map(|doc| {
+            serde_json::json!({
+                "id": doc.id,
+                "file_name": doc.file_name,
+                "file_data": doc.file_data,
+                "created_at": doc.created_at,
+                "is_locked": doc.is_locked
+            })
+        })
+        .collect();
 
-    Ok(response) // Return the JSON string
+    let response_string: String = serde_json::to_string(&response)?;
+
+    Ok(response_string)
 }
 
 

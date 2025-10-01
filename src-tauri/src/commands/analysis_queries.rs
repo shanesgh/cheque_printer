@@ -7,12 +7,13 @@ use crate::database::models::ChequeWithDocument;
 #[tauri::command]
 pub async fn get_all_cheques(pool: State<'_, SqlitePool>) -> Result<String, String> {
     let records: Vec<ChequeWithDocument> = sqlx::query_as::<_, ChequeWithDocument>(
-        "SELECT d.id as document_id, d.file_name, d.created_at, 
-                c.id as cheque_id, c.cheque_number, c.amount, c.client_name, 
+        "SELECT d.id as document_id, d.file_name, d.created_at, d.is_locked,
+                c.id as cheque_id, c.cheque_number, c.amount, c.client_name,
                 c.status, c.issue_date, c.date_field, c.remarks,
-                c.current_signatures, c.first_signature_user_id, c.second_signature_user_id
-         FROM documents d 
-         LEFT JOIN cheques c ON d.id = c.document_id 
+                c.current_signatures, c.first_signature_user_id, c.second_signature_user_id,
+                c.print_count
+         FROM documents d
+         LEFT JOIN cheques c ON d.id = c.document_id
          ORDER BY d.created_at DESC, c.id ASC"
     )
     .fetch_all(pool.inner())
@@ -35,7 +36,10 @@ pub async fn get_all_cheques(pool: State<'_, SqlitePool>) -> Result<String, Stri
                     "date": r.date_field,
                     "remarks": r.remarks,
                     "current_signatures": r.current_signatures,
-                    "first_signature_user_id": r.first_signature_user_id
+                    "first_signature_user_id": r.first_signature_user_id,
+                    "second_signature_user_id": r.second_signature_user_id,
+                    "print_count": r.print_count,
+                    "is_locked": r.is_locked
                 }))
             } else { None }
         }).collect::<Vec<_>>()
