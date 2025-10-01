@@ -42,4 +42,3 @@ pub async fn open_excel_from_database(
     Ok(file_path.to_string_lossy().to_string())
 }
 
-// Removed - use handlers/documents.rs instead
