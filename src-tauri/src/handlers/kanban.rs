@@ -25,9 +25,22 @@ pub async fn create_kanban_note(
     note_type: String,
     pool: State<'_, SqlitePool>,
 ) -> Result<()> {
+    if title.trim().is_empty() {
+        return Err(DataError::Custom("Note title cannot be empty".to_string()));
+    }
+
+    let valid_types = ["bug", "feature", "task", "enhancement"];
+    if !valid_types.contains(&note_type.as_str()) {
+        return Err(DataError::Custom(format!(
+            "Invalid note type '{}'. Must be one of: bug, feature, task, or enhancement",
+            note_type
+        )));
+    }
+
     let max_position: Option<i64> = sqlx::query_scalar("SELECT MAX(position) FROM kanban_notes")
         .fetch_one(pool.inner())
-        .await?;
+        .await
+        .map_err(|e| DataError::Database(format!("Failed to get max position: {}", e)))?;
 
     let new_position = max_position.unwrap_or(0) + 1;
 
@@ -39,7 +52,8 @@ pub async fn create_kanban_note(
         new_position
     )
     .execute(pool.inner())
-    .await?;
+    .await
+    .map_err(|e| DataError::Database(format!("Failed to create kanban note: {}", e)))?;
 
     Ok(())
 }
@@ -52,14 +66,24 @@ pub async fn update_kanban_note(
     description: Option<String>,
     pool: State<'_, SqlitePool>,
 ) -> Result<()> {
-    sqlx::query!(
+    if title.trim().is_empty() {
+        return Err(DataError::Custom("Note title cannot be empty".to_string()));
+    }
+
+    let rows_affected = sqlx::query!(
         "UPDATE kanban_notes SET title = ?, description = ? WHERE id = ?",
         title,
         description,
         id
     )
     .execute(pool.inner())
-    .await?;
+    .await
+    .map_err(|e| DataError::Database(format!("Failed to update kanban note: {}", e)))?
+    .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(DataError::Custom(format!("Kanban note with ID {} not found", id)));
+    }
 
     Ok(())
 }
@@ -72,14 +96,32 @@ pub async fn update_kanban_note_status(
     position: i64,
     pool: State<'_, SqlitePool>,
 ) -> Result<()> {
-    sqlx::query!(
+    let valid_statuses = ["todo", "in_progress", "done"];
+    if !valid_statuses.contains(&status.as_str()) {
+        return Err(DataError::Custom(format!(
+            "Invalid status '{}'. Must be one of: todo, in_progress, or done",
+            status
+        )));
+    }
+
+    if position < 0 {
+        return Err(DataError::Custom("Position must be a non-negative number".to_string()));
+    }
+
+    let rows_affected = sqlx::query!(
         "UPDATE kanban_notes SET status = ?, position = ? WHERE id = ?",
         status,
         position,
         id
     )
     .execute(pool.inner())
-    .await?;
+    .await
+    .map_err(|e| DataError::Database(format!("Failed to update kanban note status: {}", e)))?
+    .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(DataError::Custom(format!("Kanban note with ID {} not found", id)));
+    }
 
     Ok(())
 }
@@ -90,9 +132,15 @@ pub async fn delete_kanban_note(
     id: i64,
     pool: State<'_, SqlitePool>,
 ) -> Result<()> {
-    sqlx::query!("DELETE FROM kanban_notes WHERE id = ?", id)
+    let rows_affected = sqlx::query!("DELETE FROM kanban_notes WHERE id = ?", id)
         .execute(pool.inner())
-        .await?;
+        .await
+        .map_err(|e| DataError::Database(format!("Failed to delete kanban note: {}", e)))?
+        .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(DataError::Custom(format!("Kanban note with ID {} not found", id)));
+    }
 
     Ok(())
 }
@@ -121,13 +169,30 @@ pub async fn create_kanban_comment(
     comment_text: String,
     pool: State<'_, SqlitePool>,
 ) -> Result<()> {
+    if comment_text.trim().is_empty() {
+        return Err(DataError::Custom("Comment text cannot be empty".to_string()));
+    }
+
+    let note_exists = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM kanban_notes WHERE id = ?"
+    )
+    .bind(note_id)
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| DataError::Database(format!("Failed to verify note exists: {}", e)))?;
+
+    if note_exists == 0 {
+        return Err(DataError::Custom(format!("Kanban note with ID {} not found", note_id)));
+    }
+
     sqlx::query!(
         "INSERT INTO kanban_comments (note_id, comment_text) VALUES (?, ?)",
         note_id,
         comment_text
     )
     .execute(pool.inner())
-    .await?;
+    .await
+    .map_err(|e| DataError::Database(format!("Failed to create comment: {}", e)))?;
 
     Ok(())
 }
@@ -138,9 +203,15 @@ pub async fn delete_kanban_comment(
     id: i64,
     pool: State<'_, SqlitePool>,
 ) -> Result<()> {
-    sqlx::query!("DELETE FROM kanban_comments WHERE id = ?", id)
+    let rows_affected = sqlx::query!("DELETE FROM kanban_comments WHERE id = ?", id)
         .execute(pool.inner())
-        .await?;
+        .await
+        .map_err(|e| DataError::Database(format!("Failed to delete comment: {}", e)))?
+        .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(DataError::Custom(format!("Comment with ID {} not found", id)));
+    }
 
     Ok(())
 }

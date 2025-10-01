@@ -69,13 +69,23 @@ pub async fn rename_document(
     document_id: i64,
     new_name: String,
 ) -> Result<()> {
-    sqlx::query!(
+    if new_name.trim().is_empty() {
+        return Err(DataError::Custom("Document name cannot be empty".to_string()));
+    }
+
+    let rows_affected = sqlx::query!(
         "UPDATE documents SET file_name = ? WHERE id = ?",
         new_name,
         document_id
     )
     .execute(pool.inner())
-    .await?;
+    .await
+    .map_err(|e| DataError::Database(format!("Failed to rename document: {}", e)))?
+    .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(DataError::Custom(format!("Document with ID {} not found", document_id)));
+    }
 
     Ok(())
 }
@@ -90,16 +100,22 @@ pub async fn delete_document(
         "SELECT is_locked FROM documents WHERE id = ?",
         document_id
     )
-    .fetch_one(pool.inner())
-    .await?;
+    .fetch_optional(pool.inner())
+    .await
+    .map_err(|e| DataError::Database(format!("Failed to check document lock status: {}", e)))?;
 
-    if is_locked.is_locked.unwrap_or(0) == 1 {
-        return Err(DataError::Custom("Document is locked and cannot be deleted".to_string()));
+    if is_locked.is_none() {
+        return Err(DataError::Custom(format!("Document with ID {} not found", document_id)));
+    }
+
+    if is_locked.unwrap().is_locked.unwrap_or(0) == 1 {
+        return Err(DataError::Custom("Cannot delete: Document is locked. Documents are locked after printing to maintain audit trail.".to_string()));
     }
 
     sqlx::query!("DELETE FROM documents WHERE id = ?", document_id)
         .execute(pool.inner())
-        .await?;
+        .await
+        .map_err(|e| DataError::Database(format!("Failed to delete document: {}", e)))?;
 
     Ok(())
 }
@@ -107,11 +123,13 @@ pub async fn delete_document(
 /// Delete all documents (for admin/testing purposes)
 #[tauri::command]
 pub async fn delete_all_documents(pool: State<'_, SqlitePool>) -> Result<String> {
-    sqlx::query!("DELETE FROM documents")
+    let result = sqlx::query!("DELETE FROM documents")
         .execute(pool.inner())
-        .await?;
+        .await
+        .map_err(|e| DataError::Database(format!("Failed to delete all documents: {}", e)))?;
 
-    Ok("All documents deleted successfully".to_string())
+    let rows_affected = result.rows_affected();
+    Ok(format!("Successfully deleted {} document(s)", rows_affected))
 }
 
 /// Lock document (prevent deletion after printing)
@@ -120,12 +138,18 @@ pub async fn lock_document(
     document_id: i64,
     pool: State<'_, SqlitePool>,
 ) -> Result<()> {
-    sqlx::query!(
+    let rows_affected = sqlx::query!(
         "UPDATE documents SET is_locked = 1 WHERE id = ?",
         document_id
     )
     .execute(pool.inner())
-    .await?;
+    .await
+    .map_err(|e| DataError::Database(format!("Failed to lock document: {}", e)))?
+    .rows_affected();
+
+    if rows_affected == 0 {
+        return Err(DataError::Custom(format!("Document with ID {} not found", document_id)));
+    }
 
     Ok(())
 }

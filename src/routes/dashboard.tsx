@@ -46,8 +46,7 @@ function RouteComponent() {
       const response = await invoke<string>("get_all_cheques");
       const data = JSON.parse(response);
       setCheques(data.cheques || []);
-      
-      // Group cheques by document
+
       const grouped = data.cheques?.reduce((acc: any, cheque: ChequeData) => {
         const key = cheque.document_id;
         if (!acc[key]) {
@@ -62,16 +61,17 @@ function RouteComponent() {
         acc[key].cheques.push(cheque);
         return acc;
       }, {});
-      
+
       setDocumentTabs(Object.values(grouped || {}));
-      
-      // Store initial states as previous states
+
       const states = new Map();
       data.cheques?.forEach((c: ChequeData) => {
         states.set(c.cheque_id, c.status === 'Approved' ? 'Pending' : c.status);
       });
       setPreviousStates(states);
-    } catch (error) {
+    } catch (error: any) {
+      const errorMsg = error?.toString() || "Failed to load cheques";
+      toast.error(errorMsg);
       console.error("Failed to fetch cheques:", error);
     } finally {
       setLoading(false);
@@ -80,12 +80,17 @@ function RouteComponent() {
 
   const updateChequeStatus = async (chequeId: number, newStatus: string, remarks?: string) => {
     try {
-      // Calculate signature changes
       const currentCheque = cheques.find(c => c.cheque_id === chequeId);
+
+      if (!currentCheque) {
+        toast.error(`Cheque with ID ${chequeId} not found`);
+        return;
+      }
+
       let newCurrentSignatures = currentCheque?.current_signatures || 0;
       let newFirstSignatureUserId = currentCheque?.first_signature_user_id;
       let newSecondSignatureUserId = currentCheque?.second_signature_user_id;
-      
+
       if (newStatus === 'Approved' && currentCheque?.status !== 'Approved') {
         const amount = currentCheque?.amount ?? 0;
         newCurrentSignatures = Math.min((newCurrentSignatures || 0) + 1, amount > 1500 ? 2 : 1);
@@ -104,28 +109,32 @@ function RouteComponent() {
         }
       }
 
-      await invoke("update_cheque_status", { 
-        chequeId, 
+      await invoke("update_cheque_status", {
+        chequeId,
         newStatus,
         ...(remarks && { remarks })
       });
-      
+
       setCheques(prev => prev.map(c => {
         if (c.cheque_id === chequeId) {
-          const updated = { 
-            ...c, 
+          const updated = {
+            ...c,
             status: newStatus,
             ...(remarks && { remarks }),
             current_signatures: newCurrentSignatures,
             first_signature_user_id: newFirstSignatureUserId,
             second_signature_user_id: newSecondSignatureUserId
           };
-          
+
           return updated;
         }
         return c;
       }));
-    } catch (error) {
+
+      toast.success(`Cheque status updated to ${newStatus}`);
+    } catch (error: any) {
+      const errorMsg = error?.toString() || "Failed to update cheque status";
+      toast.error(errorMsg);
       console.error("Failed to update status:", error);
     }
   };
@@ -213,15 +222,19 @@ function RouteComponent() {
   const updateIssueDate = async (chequeId: number, newDate: Date) => {
     const dateString = format(newDate, 'yyyy-MM-dd');
     try {
-      await invoke("update_cheque_issue_date", { 
-        chequeId, 
-        issueDate: dateString 
+      await invoke("update_cheque_issue_date", {
+        chequeId,
+        issueDate: dateString
       });
-      
-      setCheques(prev => prev.map(c => 
+
+      setCheques(prev => prev.map(c =>
         c.cheque_id === chequeId ? { ...c, issue_date: dateString } : c
       ));
-    } catch (error) {
+
+      toast.success("Issue date updated successfully");
+    } catch (error: any) {
+      const errorMsg = error?.toString() || "Failed to update issue date";
+      toast.error(errorMsg);
       console.error("Failed to update issue date:", error);
     }
   };
@@ -256,23 +269,22 @@ function RouteComponent() {
     }
 
     try {
-      // Increment print count for each cheque
       for (const cheque of printableCheques) {
         await invoke("increment_print_count", { chequeId: cheque.cheque_id });
       }
 
-      // Lock documents
       const documentIds = [...new Set(printableCheques.map(c => c.document_id))];
       for (const docId of documentIds) {
         await invoke("lock_document", { documentId: docId });
       }
 
-      toast.success(`${printableCheques.length} cheque(s) sent to printer.`);
+      toast.success(`Successfully sent ${printableCheques.length} cheque(s) to printer`);
       setShowPrintConfirm(false);
       fetchCheques();
-    } catch (error) {
+    } catch (error: any) {
+      const errorMsg = error?.toString() || "Failed to print cheques";
+      toast.error(errorMsg);
       console.error("Failed to print cheques:", error);
-      toast.error("Failed to print cheques.");
     }
   };
 

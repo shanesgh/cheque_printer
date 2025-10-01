@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AiOutlineFileExcel } from "react-icons/ai";
 import { invoke } from "@tauri-apps/api/core";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { Search, MoveVertical as MoreVertical, Download, CreditCard as Edit, Delete } from "lucide-react";
 import { Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -42,40 +42,29 @@ function RouteComponent() {
       const parsedDocuments: Document[] = JSON.parse(response);
       setDocuments(parsedDocuments);
       setFilteredDocuments(parsedDocuments);
-    } catch (err) {
+    } catch (err: any) {
+      const errorMsg = err?.toString() || "Failed to fetch documents. Please try again.";
       console.error("Error fetching documents:", err);
-      setError("Failed to fetch documents. Please try again.");
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDownload = async (documentId: number) => {
-    console.log("ids", documentId);
     const downloadToastId = toast.loading("Opening file...");
 
     try {
-      // Get the temp file path (returns string)
       const filePath = await invoke("open_excel_from_database", {
         documentId,
       });
-      console.log("path", filePath);
 
-      // Open the file with default application
-      // await invoke("open_file_with_default_app", {
-      //   file_path: filePath,
-      // });
-      // console.log("path default", filePath);
-
-      toast.success("File downloaded", { id: downloadToastId });
-    } catch (err) {
+      toast.success("File downloaded successfully", { id: downloadToastId });
+    } catch (err: any) {
+      const errorMsg = err?.toString() || "Failed to open the file. Please try again.";
       console.error("Download failed:", err);
-      toast.error(
-        "Failed to open the file. Please try again or conact developer.",
-        {
-          id: downloadToastId,
-        }
-      );
+      toast.error(errorMsg, { id: downloadToastId });
     }
   };
 
@@ -91,24 +80,21 @@ function RouteComponent() {
           newName: newName.trim(),
         });
 
-        // Update the local state
         const updatedDocuments = documents.map((doc) =>
           doc.id === documentId ? { ...doc, file_name: newName.trim() } : doc
         );
         setDocuments(updatedDocuments);
 
-        // Update filtered documents as well
         const updatedFilteredDocuments = filteredDocuments.map((doc) =>
           doc.id === documentId ? { ...doc, file_name: newName.trim() } : doc
         );
         setFilteredDocuments(updatedFilteredDocuments);
 
-        toast.success("File renamed successfully!", { id: renameToastId });
-      } catch (err) {
+        toast.success("File renamed successfully", { id: renameToastId });
+      } catch (err: any) {
+        const errorMsg = err?.toString() || "Failed to rename the file. Please try again.";
         console.error("Rename failed:", err);
-        toast.error("Failed to rename the file. Please try again.", {
-          id: renameToastId,
-        });
+        toast.error(errorMsg, { id: renameToastId });
       }
     }
   };
@@ -168,7 +154,7 @@ function RouteComponent() {
   const handleDelete = async (documentId: number) => {
     const document = documents.find(doc => doc.id === documentId);
     if (document?.is_locked === 1) {
-      toast.error("This document is locked and cannot be deleted. Cheques have been printed from this file.");
+      toast.error("Cannot delete: Document is locked. Documents are locked after printing to maintain audit trail.");
       return;
     }
 
@@ -177,15 +163,15 @@ function RouteComponent() {
     try {
       await invoke("delete_document", { documentId });
 
-      // Remove from local state
       const updatedDocs = documents.filter((doc) => doc.id !== documentId);
       setDocuments(updatedDocs);
       setFilteredDocuments(updatedDocs);
 
-      toast.success("File deleted successfully!", { id: toastId });
-    } catch (err) {
+      toast.success("File deleted successfully", { id: toastId });
+    } catch (err: any) {
+      const errorMsg = err?.toString() || "Failed to delete the file";
       console.error("Delete failed:", err);
-      toast.error("Failed to delete the file.", { id: toastId });
+      toast.error(errorMsg, { id: toastId });
     }
   };
 
@@ -195,8 +181,6 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      <Toaster position="top-right" reverseOrder={false} />
-
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-3 md:p-6 border-b gap-4">
         <h1 className="text-2xl font-medium text-gray-900">My Drive</h1>

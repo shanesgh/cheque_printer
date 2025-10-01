@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import {
   ColumnDef,
   flexRender,
@@ -70,48 +70,41 @@ export function TaskTable<TData, TValue>({
     setRowSelection({});
   }, [data]);
 
-  // saves unedited data as Array buffer to database.
   const handleSendForProcessing = async () => {
-    if (excelDataArray) {
-      try {
-        // Check for duplicates before processing
-        const chequeData = data as ChequeType[];
-        const duplicates = checkForDuplicates();
-        
-        if (duplicates.length > 0) {
-          toast.error(`Found ${duplicates.length} duplicate cheques. Please review before processing.`);
-          return;
-        }
+    if (!excelDataArray) {
+      toast.error("No Excel data available to save");
+      return;
+    }
 
-        // Call the Tauri backend command
-        const response: string = await invoke("process_blob", {
-          data: Array.from(new Uint8Array(excelDataArray)),
-          fileName: filename,
-        });
+    try {
+      const chequeData = data as ChequeType[];
+      const duplicates = checkForDuplicates();
 
-        // Parse response to get document ID
-        const responseData = JSON.parse(response);
-        const documentId = responseData.document_id || Date.now(); // Fallback ID
-
-        // Set active cheques in store
-        setActiveCheques(chequeData, documentId, filename.toString());
-
-        // Notify success
-        toast.success("Excel sent for processing successfully!");
-        console.log("Response from backend:", response);
-      } catch (error) {
-        // Handle errors from the backend
-        console.error("Error saving file:", error);
-        toast.error("Failed to send for processing. Please try again.");
+      if (duplicates.length > 0) {
+        toast.error(`Found ${duplicates.length} duplicate cheques. Please review before processing.`);
+        return;
       }
-    } else {
-      toast.error("No Excel data available to save.");
+
+      const response: string = await invoke("process_blob", {
+        data: Array.from(new Uint8Array(excelDataArray)),
+        fileName: filename,
+      });
+
+      const responseData = JSON.parse(response);
+      const documentId = responseData.document_id || Date.now();
+
+      setActiveCheques(chequeData, documentId, filename.toString());
+
+      toast.success("Excel file processed successfully");
+    } catch (error: any) {
+      const errorMsg = error?.toString() || "Failed to process file. Please try again.";
+      console.error("Error saving file:", error);
+      toast.error(errorMsg);
     }
   };
 
   return (
     <div className="w-full">
-      <Toaster position="top-right" reverseOrder={false} />
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-4">
         <Input
           placeholder="Filter payee..."
