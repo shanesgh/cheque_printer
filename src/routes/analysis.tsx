@@ -82,7 +82,7 @@ function RouteComponent() {
     } catch (error) {
       console.error("Failed to update cheque status:", error);
     }
-
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
