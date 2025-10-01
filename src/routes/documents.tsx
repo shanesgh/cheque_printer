@@ -56,7 +56,7 @@ function RouteComponent() {
 
     try {
       // Get the temp file path (returns string)
-      const filePath = await invoke("get_excel_file", {
+      const filePath = await invoke("open_excel_from_database", {
         documentId,
       });
       console.log("path", filePath);

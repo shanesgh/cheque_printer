@@ -9,10 +9,10 @@ mod handlers;
 
 // Import all command handlers
 use commands::{
-    cheque_to_text,
-    process_excel_file,
-    process_blob,
-    get_excel_file
+    convert_amount_to_words,
+    parse_excel_to_cheques,
+    upload_excel_as_blob,
+    open_excel_from_database
 };
 
 use handlers::{
@@ -81,10 +81,10 @@ async fn async_main() {
         .manage(pool)
         .invoke_handler(generate_handler![
             // Excel processing
-            process_excel_file,
-            cheque_to_text,
-            process_blob,
-            get_excel_file,
+            parse_excel_to_cheques,
+            convert_amount_to_words,
+            upload_excel_as_blob,
+            open_excel_from_database,
             // Document management
             get_all_documents,
             download_document_to_folder,

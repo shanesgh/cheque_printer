@@ -6,7 +6,7 @@ use calamine::{Data, Reader, Xlsx};
 use std::io::Cursor;
 
 #[tauri::command]
-pub async fn process_blob(
+pub async fn upload_excel_as_blob(
     file_name: String,
     data: Vec<u8>,
     pool: State<'_, SqlitePool>,

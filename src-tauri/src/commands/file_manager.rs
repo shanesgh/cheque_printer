@@ -7,7 +7,7 @@ use sqlx::SqlitePool;
 use tauri::State;
 
 #[tauri::command]
-pub async fn get_excel_file(
+pub async fn open_excel_from_database(
     document_id: i64,
     pool: State<'_, SqlitePool>,
 ) -> Result<String, String> {
@@ -42,40 +42,4 @@ pub async fn get_excel_file(
     Ok(file_path.to_string_lossy().to_string())
 }
 
-#[tauri::command]
-pub async fn rename_document(
-    document_id: i64,
-    new_name: String,
-    pool: State<'_, SqlitePool>,
-) -> Result<(), String> {
-    println!("Renaming document ID {} to '{}'", document_id, new_name);
-
-    sqlx::query!(
-        "UPDATE documents SET file_name = ? WHERE id = ?",
-        new_name,
-        document_id
-    )
-    .execute(pool.inner())
-    .await
-    .map_err(|e| format!("Failed to rename document: {}", e))?;
-
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn delete_document(
-    document_id: i64,
-    pool: State<'_, SqlitePool>,
-) -> Result<(), String> {
-    println!("Deleting document ID: {}", document_id);
-
-    sqlx::query!(
-        "DELETE FROM documents WHERE id = ?",
-        document_id
-    )
-    .execute(pool.inner())
-    .await
-    .map_err(|e| format!("Failed to delete document: {}", e))?;
-
-    Ok(())
-}
+// Removed - use handlers/documents.rs instead

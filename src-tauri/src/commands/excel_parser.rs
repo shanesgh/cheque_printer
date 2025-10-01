@@ -5,7 +5,7 @@ use rand::Rng; // For random ID generation
 use chrono::Utc;
 
 #[tauri::command]
-pub fn process_excel_file(file_data: Vec<u8>, file_name: String) -> Result<String, String> {
+pub fn parse_excel_to_cheques(file_data: Vec<u8>, file_name: String) -> Result<String, String> {
     println!("Processing file: {}", file_name); // Print the file name
     let cursor: Cursor<Vec<u8>> = Cursor::new(file_data);
 

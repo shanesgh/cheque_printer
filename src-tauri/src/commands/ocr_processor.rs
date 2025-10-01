@@ -62,7 +62,7 @@ fn number_to_words(n: u64) -> String {
 
 
 #[tauri::command]
-pub fn cheque_to_text(amount: f64, name: &str) -> Result<String, String> {
+pub fn convert_amount_to_words(amount: f64, name: &str) -> Result<String, String> {
     if amount > MAX_POSSIBLE_CHEQUE_PAYMENT {
         return Err("Amount exceeds the limit of 25 million.".to_string());
     }
