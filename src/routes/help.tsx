@@ -191,14 +191,13 @@ function RouteComponent() {
   const selectedNoteData = notes.find(n => n.id === selectedNote);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-[#0079bf]">
-      <div className="flex items-center justify-between px-4 py-3 bg-[rgba(0,0,0,0.24)]">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-white">Help & Support Board</h1>
+          <h1 className="text-lg font-semibold">Help & Support Board</h1>
         </div>
         <Button
           onClick={() => setShowAddForm(true)}
-          className="bg-[rgba(255,255,255,0.24)] hover:bg-[rgba(255,255,255,0.32)] text-white border-0 shadow-none"
           size="sm"
         >
           <Plus className="h-4 w-4 mr-1" />
@@ -225,10 +224,10 @@ function RouteComponent() {
                   placeholder="Add description..."
                   value={newNote.description}
                   onChange={(e) => setNewNote({ ...newNote, description: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 min-h-[80px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full border border-input rounded-md px-3 py-2 min-h-[80px] text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none bg-background"
                 />
                 <select
-                  className="border border-gray-300 rounded-md px-3 py-2 w-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="border border-input rounded-md px-3 py-2 w-full bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   value={newNote.note_type}
                   onChange={(e) => setNewNote({ ...newNote, note_type: e.target.value as any })}
                 >
@@ -237,7 +236,7 @@ function RouteComponent() {
                   <option value="request">Request</option>
                 </select>
                 <div className="flex gap-2 pt-2">
-                  <Button onClick={createNote} className="bg-[#0079bf] hover:bg-[#026aa7] text-white" size="sm">Add Card</Button>
+                  <Button onClick={createNote} size="sm">Add Card</Button>
                   <Button variant="ghost" onClick={() => setShowAddForm(false)} size="sm">Cancel</Button>
                 </div>
               </CardContent>
@@ -247,8 +246,8 @@ function RouteComponent() {
 
         {selectedNote && selectedNoteData && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedNote(null)}>
-            <Card className="w-full max-w-2xl shadow-2xl border-0 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <CardHeader className="pb-3 sticky top-0 bg-white z-10 border-b">
+            <Card className="w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <CardHeader className="pb-3 sticky top-0 bg-card z-10 border-b">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -272,7 +271,7 @@ function RouteComponent() {
                 {selectedNoteData.description && (
                   <div className="mb-6">
                     <h3 className="text-sm font-semibold mb-2">Description</h3>
-                    <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{selectedNoteData.description}</p>
+                    <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded">{selectedNoteData.description}</p>
                   </div>
                 )}
 
@@ -284,16 +283,16 @@ function RouteComponent() {
 
                   <div className="space-y-3 mb-4">
                     {comments[selectedNote]?.map((comment) => (
-                      <div key={comment.id} className="bg-gray-50 p-3 rounded border flex justify-between items-start">
+                      <div key={comment.id} className="bg-muted/50 p-3 rounded border flex justify-between items-start">
                         <div className="flex-1">
-                          <p className="text-sm text-gray-800">{comment.comment_text}</p>
-                          <span className="text-xs text-gray-500 mt-1 block">{formatDateTime(comment.created_at)}</span>
+                          <p className="text-sm">{comment.comment_text}</p>
+                          <span className="text-xs text-muted-foreground mt-1 block">{formatDateTime(comment.created_at)}</span>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteComment(comment.id, selectedNote)}
-                          className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600"
+                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -326,12 +325,12 @@ function RouteComponent() {
           <div className="flex gap-3 h-full">
             {["todo", "in_progress", "done"].map((status) => (
               <div key={status} className="flex-shrink-0 w-[272px] flex flex-col max-h-full">
-                <div className="bg-[#ebecf0] rounded-lg flex flex-col max-h-full shadow-sm">
+                <div className="bg-muted/50 rounded-lg flex flex-col max-h-full shadow-sm border">
                   <div className="px-3 py-2 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-800">
+                    <h3 className="text-sm font-semibold">
                       {status === "todo" ? "To Do" : status === "in_progress" ? "In Progress" : "Done"}
                     </h3>
-                    <Badge variant="secondary" className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0">
+                    <Badge variant="secondary" className="text-xs px-1.5 py-0">
                       {getColumnNotes(status).length}
                     </Badge>
                   </div>
@@ -341,7 +340,7 @@ function RouteComponent() {
                         {...provided.droppableProps}
                         ref={provided.innerRef}
                         className={`flex-1 overflow-y-auto px-2 pb-2 space-y-2 ${
-                          snapshot.isDraggingOver ? 'bg-[#dfe1e6]' : ''
+                          snapshot.isDraggingOver ? 'bg-accent' : ''
                         }`}
                         style={{ minHeight: '100px' }}
                       >
@@ -356,7 +355,7 @@ function RouteComponent() {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer p-2 ${
+                                className={`bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer p-2 border ${
                                   snapshot.isDragging ? 'rotate-3 shadow-lg' : ''
                                 }`}
                                 onClick={() => openNoteDetail(note.id)}
@@ -387,22 +386,22 @@ function RouteComponent() {
                                       />
                                     ) : (
                                       <h4
-                                        className="text-sm font-medium text-gray-800 mb-1 break-words"
+                                        className="text-sm font-medium mb-1 break-words"
                                       >
                                         {note.title}
                                       </h4>
                                     )}
                                     {note.description && (
-                                      <p className="text-xs text-gray-600 line-clamp-2 mb-2">{note.description}</p>
+                                      <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{note.description}</p>
                                     )}
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                                           <Clock className="h-3 w-3" />
                                           {formatDateTime(note.created_at)}
                                         </span>
                                         {comments[note.id]?.length > 0 && (
-                                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
                                             <MessageSquare className="h-3 w-3" />
                                             {comments[note.id].length}
                                           </span>
