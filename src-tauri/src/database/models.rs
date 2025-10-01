@@ -2,37 +2,22 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-// pub type DatabasePool = sqlx::sqlite::SqlitePool;
-// pub type DatabaseTransaction<'t> = sqlx::Transaction<'t, sqlx::Sqlite>;
-// pub type QueryResult = sqlx::sqlite::SqliteQueryResult;
-
-/// Represents the metadata for an uploaded file in the database.
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
-pub struct FileMetadata {
-    pub id: i64,                        // Primary key
-    pub name: String,                   // Name of the file
-    pub path: String,                   // Location of the file on disk
-    pub uploaded_at: NaiveDateTime, // Upload timestamp
-}
-
-/// Represents a document stored as a BLOB in the database.
+/// Document stored as binary blob in database
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct Document {
-    pub id: i64,                   // Unique document ID
-    pub file_name: String,         // File name
-    pub file_data: Vec<u8>,        // Binary data stored as a BLOB
-    pub created_at: NaiveDateTime, // Timestamp of creation
+    pub id: i64,
+    pub file_name: String,
+    pub file_data: Vec<u8>,
+    pub created_at: NaiveDateTime,
 }
 
+/// Cheque with associated document information (for joins)
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct ChequeWithDocument {
-    // Document fields (without file_data since we don't need the blob in this query)
     pub document_id: i64,
     pub file_name: String,
     pub created_at: NaiveDateTime,
     pub is_locked: Option<i64>,
-
-    // Cheque fields (all optional because of LEFT JOIN)
     pub cheque_id: Option<i64>,
     pub cheque_number: Option<String>,
     pub amount: Option<f64>,
@@ -47,72 +32,35 @@ pub struct ChequeWithDocument {
     pub print_count: Option<i64>,
 }
 
-#[derive(Debug, thiserror::Error, Serialize, Deserialize)]
-#[serde(tag = "type", content = "details")]
-pub enum DataError {
-    #[error("Database error")]
-    Database(String), // Use a String instead of directly storing `sqlx::Error`
-    #[error("File system error: {0}")]
-    FileSystem(String),
-    
-    #[error("Serialization error")]
-    Serialization(String), // Use a String instead of directly storing `serde_json::Error`
-    #[error("Custom error: {0}")]
-    Custom(String),
-}
-
+/// Individual cheque record
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct Cheque {
-    pub id: i64,                        // Primary key
-    pub document_id: i64,              // Foreign key to documents
-    pub cheque_number: String,         // Cheque number
-    pub amount: f64,                   // Amount on the cheque
-    pub client_name: String,           // Name of the client
-    pub status: String,                // Status (e.g., Pending, Approved)
-    pub issue_date: Option<String>,    // Optional issue date (stored as TEXT)
-    pub date_field: Option<String>,    // Optional additional date field
-    pub remarks: Option<String>,       // Optional remarks
-    pub created_at: Option<NaiveDateTime>, // Timestamp of creation
+    pub id: i64,
+    pub document_id: i64,
+    pub cheque_number: String,
+    pub amount: f64,
+    pub client_name: String,
+    pub status: String,
+    pub issue_date: Option<String>,
+    pub date_field: Option<String>,
+    pub remarks: Option<String>,
+    pub created_at: Option<NaiveDateTime>,
 }
 
-// Add From<String> implementation
-impl From<String> for DataError {
-    fn from(error: String) -> Self {
-        DataError::Custom(error)
-    }
-}
-
-impl From<sqlx::Error> for DataError {
-    fn from(error: sqlx::Error) -> Self {
-        DataError::Database(error.to_string()) // Convert `sqlx::Error` into a string
-    }
-}
-
-impl From<serde_json::Error> for DataError {
-    fn from(error: serde_json::Error) -> Self {
-        DataError::Serialization(error.to_string()) // Convert `serde_json::Error` into a string
-    }
-}
-
-
-impl From<DataError> for String {
-    fn from(error: DataError) -> Self {
-        error.to_string() // Converts the error to a string for frontend compatibility.
-    }
-}
-
+/// Kanban board note
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct KanbanNote {
     pub id: i64,
     pub title: String,
     pub description: Option<String>,
-    pub status: String, // "todo", "in_progress", "done"
-    pub note_type: String, // "issue", "feature", "update"
+    pub status: String,
+    pub note_type: String,
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
     pub position: i64,
 }
 
+/// Comment on kanban note
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct KanbanComment {
     pub id: i64,
@@ -122,6 +70,40 @@ pub struct KanbanComment {
     pub updated_at: Option<NaiveDateTime>,
 }
 
+/// Custom error types for database operations
+#[derive(Debug, thiserror::Error, Serialize, Deserialize)]
+#[serde(tag = "type", content = "details")]
+pub enum DataError {
+    #[error("Database error: {0}")]
+    Database(String),
+    #[error("File system error: {0}")]
+    FileSystem(String),
+    #[error("Serialization error: {0}")]
+    Serialization(String),
+    #[error("Custom error: {0}")]
+    Custom(String),
+}
 
+impl From<String> for DataError {
+    fn from(error: String) -> Self {
+        DataError::Custom(error)
+    }
+}
 
+impl From<sqlx::Error> for DataError {
+    fn from(error: sqlx::Error) -> Self {
+        DataError::Database(error.to_string())
+    }
+}
 
+impl From<serde_json::Error> for DataError {
+    fn from(error: serde_json::Error) -> Self {
+        DataError::Serialization(error.to_string())
+    }
+}
+
+impl From<DataError> for String {
+    fn from(error: DataError) -> Self {
+        error.to_string()
+    }
+}

@@ -5,45 +5,111 @@ use sqlx::SqlitePool;
 
 mod commands;
 mod database;
+mod handlers;
 
-use database::queries::{delete_all_documents, get_all_documents, get_document_file};
-use database::initialize::initialize_database;
-use commands::{cheque_to_text, process_excel_file, process_blob, get_excel_file, rename_document, delete_document, get_all_cheques, update_cheque_status, get_kanban_notes, create_kanban_note, update_kanban_note, update_kanban_note_status, delete_kanban_note, get_kanban_comments, create_kanban_comment, delete_kanban_comment, execute_dynamic_query, increment_print_count, lock_document, is_document_locked, update_decline_reason, update_cheque_issue_date};
+// Import all command handlers
+use commands::{
+    cheque_to_text,
+    process_excel_file,
+    process_blob,
+    get_excel_file
+};
+
+use handlers::{
+    documents::{
+        get_all_documents,
+        download_document_to_folder,
+        rename_document,
+        delete_document,
+        delete_all_documents,
+        lock_document,
+        is_document_locked
+    },
+    cheques::{
+        get_all_cheques,
+        update_cheque_status,
+        update_cheque_issue_date,
+        update_decline_reason,
+        increment_print_count,
+        execute_dynamic_query
+    },
+    kanban::{
+        get_kanban_notes,
+        create_kanban_note,
+        update_kanban_note,
+        update_kanban_note_status,
+        delete_kanban_note,
+        get_kanban_comments,
+        create_kanban_comment,
+        delete_kanban_comment
+    }
+};
 
 fn main() {
-    // Start the tokio runtime
     tauri::async_runtime::block_on(async_main());
 }
 
 async fn async_main() {
-    // Initialize the database connection pool
-    let database_url: &'static str = "sqlite://storage.db?mode=rwc";
-    let pool: sqlx::Pool<sqlx::Sqlite> = SqlitePool::connect(database_url)
+    // Connect to database
+    let database_url = "sqlite://storage.db?mode=rwc";
+    let pool = SqlitePool::connect(database_url)
         .await
-        .expect("Failed to connect to the database");
+        .expect("Failed to connect to database");
 
-    // Initialize the database schema
-    if let Err(e) = initialize_database(&pool).await {
-        println!("Database setup error: {}", e);
-    } else {
-        println!("Database initialized successfully!");
+    // Verify database connection
+    match sqlx::query("SELECT 1")
+        .execute(&pool)
+        .await
+    {
+        Ok(_) => println!("✓ Database connection successful"),
+        Err(e) => println!("✗ Database connection failed: {}", e),
     }
 
-    // Run the Tauri application
+    // Run migrations
+    match sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+    {
+        Ok(_) => println!("✓ Database migrations applied successfully"),
+        Err(e) => println!("✗ Migration error: {}", e),
+    }
+
+    // Start Tauri application
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
-        .manage(pool) // Manage the database connection pool
-        .invoke_handler(generate_handler![process_excel_file, rename_document,cheque_to_text, process_blob, get_all_documents, get_document_file,delete_all_documents, get_excel_file, delete_document, get_all_cheques, update_cheque_status, get_kanban_notes, create_kanban_note, update_kanban_note, update_kanban_note_status, delete_kanban_note, get_kanban_comments, create_kanban_comment, delete_kanban_comment, execute_dynamic_query, increment_print_count, lock_document, is_document_locked, update_decline_reason, update_cheque_issue_date])
+        .manage(pool)
+        .invoke_handler(generate_handler![
+            // Excel processing
+            process_excel_file,
+            cheque_to_text,
+            process_blob,
+            get_excel_file,
+            // Document management
+            get_all_documents,
+            download_document_to_folder,
+            rename_document,
+            delete_document,
+            delete_all_documents,
+            lock_document,
+            is_document_locked,
+            // Cheque operations
+            get_all_cheques,
+            update_cheque_status,
+            update_cheque_issue_date,
+            update_decline_reason,
+            increment_print_count,
+            execute_dynamic_query,
+            // Kanban board
+            get_kanban_notes,
+            create_kanban_note,
+            update_kanban_note,
+            update_kanban_note_status,
+            delete_kanban_note,
+            get_kanban_comments,
+            create_kanban_comment,
+            delete_kanban_comment
+        ])
         .run(generate_context!())
-        .expect("Error while running Tauri application");
+        .expect("Error running Tauri application");
 }
-
-
-
-
-
-
-
-
-

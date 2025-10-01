@@ -27,7 +27,7 @@ function RouteComponent() {
     try {
       const response = await invoke<string>("get_all_cheques");
       const data = JSON.parse(response);
-      setCheques(data);
+      setCheques(data.cheques || []);
     } catch (error) {
       console.error("Failed to fetch cheques:", error);
     } finally {
@@ -94,10 +94,30 @@ function RouteComponent() {
     a.click();
   };
 
-  const renderChart = () => {
-    if (!queryResult?.data || queryResult.data.length === 0) return null;
+  const getChartData = () => {
+    if (queryResult?.data && queryResult.data.length > 0) {
+      return queryResult.data;
+    }
 
-    const data = queryResult.data;
+    // Default data from cheques
+    const statusData = [
+      { name: 'Approved', value: cheques.filter(c => c.status === 'Approved').length },
+      { name: 'Pending', value: cheques.filter(c => c.status === 'Pending').length },
+      { name: 'Declined', value: cheques.filter(c => c.status === 'Declined').length },
+    ].filter(item => item.value > 0);
+
+    return statusData;
+  };
+
+  const renderChart = () => {
+    const data = getChartData();
+    if (!data || data.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-64 text-muted-foreground">
+          <p>No data available. Run a query or view default cheque status distribution above.</p>
+        </div>
+      );
+    }
     const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00'];
 
     switch (selectedChart) {
