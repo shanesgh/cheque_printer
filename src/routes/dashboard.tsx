@@ -571,7 +571,7 @@ function RouteComponent() {
                       />
                     </td>
                     <td className="p-2 md:p-3 text-xs md:text-sm">
-                      {cheque.date ? format(new Date(cheque.date), 'MMM dd, yyyy') : 'N/A'}
+                      {cheque.date ? format(new Date(cheque.date), 'MMM dd, yyyy') : cheque.created_at ? format(new Date(cheque.created_at), 'MMM dd, yyyy') : 'N/A'}
                     </td>
                     <td className="p-2 md:p-3">
                       <div className="font-mono text-xs md:text-sm">{cheque.cheque_number}</div>
