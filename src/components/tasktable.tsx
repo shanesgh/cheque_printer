@@ -85,7 +85,7 @@ export function TaskTable<TData, TValue>({
         return;
       }
 
-      const response: string = await invoke("process_blob", {
+      const response: string = await invoke("upload_excel_as_blob", {
         data: Array.from(new Uint8Array(excelDataArray)),
         fileName: filename,
       });

@@ -30,7 +30,7 @@ const Basic: FC = () => {
 
         // Send the file data to the Tauri backend
         console.log("Data,", data);
-        const process_data: string = await invoke("process_excel_file", {
+        const process_data: string = await invoke("parse_excel_to_cheques", {
           fileData: Array.from(new Uint8Array(data)),
           fileName: file.name,
         });
