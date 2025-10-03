@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock, ArrowUpDown } from "lucide-react";
 import { Calendar as CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ChequeData } from "@/types";
 import toast from "react-hot-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,7 +29,12 @@ interface DocumentTab {
 function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updateIssueDate: (id: number, date: Date) => void }) {
   const [open, setOpen] = useState(false);
 
-  const displayDate = cheque.issue_date ? new Date(cheque.issue_date) : new Date();
+  const parseLocalDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const displayDate = cheque.issue_date ? parseLocalDate(cheque.issue_date) : new Date();
   const formattedDate = format(displayDate, 'MMM dd, yyyy');
 
   const handleDateSelect = (date: Date | undefined) => {
