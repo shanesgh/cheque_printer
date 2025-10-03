@@ -29,6 +29,14 @@ interface DocumentTab {
 function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updateIssueDate: (id: number, date: Date) => void }) {
   const [open, setOpen] = useState(false);
 
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      console.log('Date selected:', date, 'for cheque:', cheque.cheque_id);
+      updateIssueDate(cheque.cheque_id, date);
+      setOpen(false);
+    }
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -41,12 +49,7 @@ function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updat
         <Calendar
           mode="single"
           selected={cheque.issue_date ? new Date(cheque.issue_date) : undefined}
-          onSelect={(date) => {
-            if (date) {
-              updateIssueDate(cheque.cheque_id, date);
-              setOpen(false);
-            }
-          }}
+          onSelect={handleDateSelect}
           initialFocus
         />
       </PopoverContent>
@@ -249,15 +252,22 @@ function RouteComponent() {
 
   const updateIssueDate = async (chequeId: number, newDate: Date) => {
     const dateString = format(newDate, 'yyyy-MM-dd');
+    console.log('updateIssueDate called with:', { chequeId, newDate, dateString });
+
     try {
       await invoke("update_cheque_issue_date", {
         chequeId,
         issueDate: dateString
       });
 
-      setCheques(prev => prev.map(c =>
-        c.cheque_id === chequeId ? { ...c, issue_date: dateString } : c
-      ));
+      console.log('Backend update successful, updating state...');
+      setCheques(prev => {
+        const updated = prev.map(c =>
+          c.cheque_id === chequeId ? { ...c, issue_date: dateString } : c
+        );
+        console.log('Updated cheques:', updated.find(c => c.cheque_id === chequeId));
+        return updated;
+      });
 
       toast.success("Issue date updated successfully");
     } catch (error: any) {
