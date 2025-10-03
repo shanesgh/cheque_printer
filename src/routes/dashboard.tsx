@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, ArrowUpDown, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Calendar as CalendarIcon, ArrowUpDown, FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ChequeData } from "@/types";
 import toast from "react-hot-toast";
