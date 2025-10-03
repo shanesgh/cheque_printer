@@ -29,6 +29,9 @@ interface DocumentTab {
 function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updateIssueDate: (id: number, date: Date) => void }) {
   const [open, setOpen] = useState(false);
 
+  const displayDate = cheque.issue_date ? new Date(cheque.issue_date) : new Date();
+  const formattedDate = format(displayDate, 'MMM dd, yyyy');
+
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       console.log('Date selected:', date, 'for cheque:', cheque.cheque_id);
@@ -42,13 +45,14 @@ function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updat
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="justify-start text-left font-normal text-xs">
           <CalendarIcon className="mr-2 h-3 w-3" />
-          {cheque.issue_date ? format(new Date(cheque.issue_date), 'MMM dd, yyyy') : 'Pick date'}
+          {formattedDate}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
+          key={cheque.issue_date || 'no-date'}
           mode="single"
-          selected={cheque.issue_date ? new Date(cheque.issue_date) : undefined}
+          selected={displayDate}
           onSelect={handleDateSelect}
           initialFocus
         />
