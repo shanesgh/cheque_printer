@@ -26,6 +26,34 @@ interface DocumentTab {
   cheques: ChequeData[];
 }
 
+function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updateIssueDate: (id: number, date: Date) => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="justify-start text-left font-normal text-xs">
+          <CalendarIcon className="mr-2 h-3 w-3" />
+          {cheque.issue_date ? format(new Date(cheque.issue_date), 'MMM dd, yyyy') : 'Pick date'}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={cheque.issue_date ? new Date(cheque.issue_date) : undefined}
+          onSelect={(date) => {
+            if (date) {
+              updateIssueDate(cheque.cheque_id, date);
+              setOpen(false);
+            }
+          }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function RouteComponent() {
   const [cheques, setCheques] = useState<ChequeData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -580,24 +608,10 @@ function RouteComponent() {
                       ${cheque.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="p-2 md:p-3">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" size="sm" className="justify-start text-left font-normal text-xs">
-                            <CalendarIcon className="mr-2 h-3 w-3" />
-                            {cheque.issue_date ? format(new Date(cheque.issue_date), 'MMM dd, yyyy') : 'Pick date'}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={cheque.issue_date ? new Date(cheque.issue_date) : undefined}
-                            onSelect={(date) => {
-                              if (date) updateIssueDate(cheque.cheque_id, date);
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <DatePickerCell
+                        cheque={cheque}
+                        updateIssueDate={updateIssueDate}
+                      />
                     </td>
                     <td className="p-2 md:p-3">
                       <div>
