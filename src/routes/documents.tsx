@@ -139,16 +139,12 @@ function RouteComponent() {
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(size) / Math.log(k));
-    return parseFloat((size / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return `${(size / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.getMonth() + 1; // getMonth() returns 0-11, so add 1
-    const year = date.getFullYear().toString().slice(-2); // Get last 2 digits of year
-
-    return `${day}/${month}/${year}`;
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear().toString().slice(-2)}`;
   };
 
   const handleDelete = async (documentId: number) => {
@@ -278,20 +274,22 @@ function RouteComponent() {
                         <Download className="w-4 h-4" />
                         <span>Download</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          const confirmed = window.confirm(
-                            "Are you sure you want to permanently delete this file?"
-                          );
-                          if (confirmed) {
-                            handleDelete(doc.id);
-                          }
-                        }}
-                        className="flex items-center space-x-2 text-red-600"
-                      >
-                        <Delete className="w-4 h-4" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
+                      {doc.is_locked !== 1 && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const confirmed = window.confirm(
+                              "Are you sure you want to permanently delete this file?"
+                            );
+                            if (confirmed) {
+                              handleDelete(doc.id);
+                            }
+                          }}
+                          className="flex items-center space-x-2 text-red-600"
+                        >
+                          <Delete className="w-4 h-4" />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

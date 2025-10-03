@@ -148,22 +148,18 @@ function RouteComponent() {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "issue": return "bg-red-50 text-red-700 border-red-200";
-      case "feature": return "bg-blue-50 text-blue-700 border-blue-200";
-      case "request": return "bg-green-50 text-green-700 border-green-200";
-      default: return "bg-gray-50 text-gray-700 border-gray-200";
-    }
+  const typeConfig = {
+    issue: { color: "bg-red-50 text-red-700 border-red-200", icon: Bug },
+    feature: { color: "bg-blue-50 text-blue-700 border-blue-200", icon: Lightbulb },
+    request: { color: "bg-green-50 text-green-700 border-green-200", icon: RefreshCw },
   };
 
+  const getTypeColor = (type: string) =>
+    typeConfig[type as keyof typeof typeConfig]?.color || "bg-gray-50 text-gray-700 border-gray-200";
+
   const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "issue": return <Bug className="h-3 w-3" />;
-      case "feature": return <Lightbulb className="h-3 w-3" />;
-      case "request": return <RefreshCw className="h-3 w-3" />;
-      default: return null;
-    }
+    const Icon = typeConfig[type as keyof typeof typeConfig]?.icon;
+    return Icon ? <Icon className="h-3 w-3" /> : null;
   };
 
   const getColumnNotes = (status: string) =>

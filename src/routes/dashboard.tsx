@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock, ArrowUpDown } from "lucide-react";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { CalendarIcon, ArrowUpDown, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
+import { format } from "date-fns";
 import { ChequeData } from "@/types";
 import toast from "react-hot-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -35,11 +34,9 @@ function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updat
   };
 
   const displayDate = cheque.issue_date ? parseLocalDate(cheque.issue_date) : new Date();
-  const formattedDate = format(displayDate, 'MMM dd, yyyy');
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      console.log('Date selected:', date, 'for cheque:', cheque.cheque_id);
       updateIssueDate(cheque.cheque_id, date);
       setOpen(false);
     }
@@ -50,7 +47,7 @@ function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updat
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="justify-start text-left font-normal text-xs">
           <CalendarIcon className="mr-2 h-3 w-3" />
-          {formattedDate}
+          {format(displayDate, 'MMM dd, yyyy')}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -118,12 +115,12 @@ function RouteComponent() {
     }
   };
 
-  const updateChequeStatus = async (chequeId: number, newStatus: string, remarks?: string) => {
+  const updateChequeStatus = async (chequeId: number, newStatus: string, remarks?: string, showToast = true) => {
     try {
       const currentCheque = cheques.find(c => c.cheque_id === chequeId);
 
       if (!currentCheque) {
-        toast.error(`Cheque with ID ${chequeId} not found`);
+        if (showToast) toast.error(`Cheque with ID ${chequeId} not found`);
         return;
       }
 
@@ -171,10 +168,10 @@ function RouteComponent() {
         return c;
       }));
 
-      toast.success(`Cheque status updated to ${newStatus}`);
+      if (showToast) toast.success(`Cheque status updated to ${newStatus}`);
     } catch (error: any) {
       const errorMsg = error?.toString() || "Failed to update cheque status";
-      toast.error(errorMsg);
+      if (showToast) toast.error(errorMsg);
       console.error("Failed to update status:", error);
     }
   };
@@ -212,28 +209,30 @@ function RouteComponent() {
     }
   };
 
-  const handleMasterSelect = (checked: boolean) => {
+  const handleMasterSelect = async (checked: boolean) => {
     const filteredCheques = getFilteredCheques();
-    
+
     if (checked) {
-      // Approve all
       const newSelected = new Set(selectedCheques);
-      filteredCheques.forEach(cheque => {
+      const updates = filteredCheques.filter(c => c.status !== 'Approved');
+
+      await Promise.all(updates.map(cheque => {
         newSelected.add(cheque.cheque_id);
-        if (cheque.status !== 'Approved') {
-          updateChequeStatus(cheque.cheque_id, 'Approved');
-        }
-      });
+        return updateChequeStatus(cheque.cheque_id, 'Approved', undefined, false);
+      }));
+
       setSelectedCheques(newSelected);
+      if (updates.length > 0) toast.success(`Approved ${updates.length} cheque(s)`);
     } else {
-      // Revert all to previous state
-      filteredCheques.forEach(cheque => {
+      const updates = filteredCheques.filter(c => c.status === 'Approved');
+
+      await Promise.all(updates.map(cheque => {
         const previousState = previousStates.get(cheque.cheque_id) || 'Pending';
-        if (cheque.status === 'Approved') {
-          updateChequeStatus(cheque.cheque_id, previousState);
-        }
-      });
+        return updateChequeStatus(cheque.cheque_id, previousState, undefined, false);
+      }));
+
       setSelectedCheques(new Set());
+      if (updates.length > 0) toast.success(`Reverted ${updates.length} cheque(s)`);
     }
   };
 
@@ -261,7 +260,6 @@ function RouteComponent() {
 
   const updateIssueDate = async (chequeId: number, newDate: Date) => {
     const dateString = format(newDate, 'yyyy-MM-dd');
-    console.log('updateIssueDate called with:', { chequeId, newDate, dateString });
 
     try {
       await invoke("update_cheque_issue_date", {
@@ -269,14 +267,9 @@ function RouteComponent() {
         issueDate: dateString
       });
 
-      console.log('Backend update successful, updating state...');
-      setCheques(prev => {
-        const updated = prev.map(c =>
-          c.cheque_id === chequeId ? { ...c, issue_date: dateString } : c
-        );
-        console.log('Updated cheques:', updated.find(c => c.cheque_id === chequeId));
-        return updated;
-      });
+      setCheques(prev => prev.map(c =>
+        c.cheque_id === chequeId ? { ...c, issue_date: dateString } : c
+      ));
 
       toast.success("Issue date updated successfully");
     } catch (error: any) {
@@ -347,10 +340,7 @@ function RouteComponent() {
   };
 
   const handleSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
+    const direction = sortConfig?.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc';
     setSortConfig({ key, direction });
   };
 
@@ -363,6 +353,12 @@ function RouteComponent() {
 
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;
+
+      if (sortConfig.key === 'cheque_number') {
+        const aNum = parseInt(aValue) || 0;
+        const bNum = parseInt(bValue) || 0;
+        return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
+      }
 
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         return sortConfig.direction === 'asc'
@@ -393,7 +389,8 @@ function RouteComponent() {
     return getSortedCheques(filtered);
   };
 
-  const getRowColor = (status: string) => {
+  const getRowColor = (status: string, printCount?: number) => {
+    if (printCount && printCount > 0) return 'bg-orange-50 border-orange-200';
     switch (status) {
       case 'Approved': return 'bg-green-50 border-green-200';
       case 'Declined': return 'bg-red-50 border-red-200';
@@ -610,7 +607,7 @@ function RouteComponent() {
                 {filteredCheques.map((cheque) => {
                   const requiredSigs = cheque.amount > 1500 ? 2 : 1;
                   return (
-                  <tr key={cheque.cheque_id} className={`border-b ${getRowColor(cheque.status)}`}>
+                  <tr key={cheque.cheque_id} className={`border-b ${getRowColor(cheque.status, cheque.print_count)}`}>
                     <td className="p-2 md:p-3">
                       <Checkbox
                         checked={selectedCheques.has(cheque.cheque_id)}
