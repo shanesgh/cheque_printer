@@ -3,11 +3,9 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Calendar as CalendarIcon, Search, TrendingUp, DollarSign, Users, FileText, CheckCircle, XCircle, Clock, Printer } from "lucide-react";
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO } from 'date-fns';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Download, Search, TrendingUp, DollarSign, Users, FileText, CheckCircle, XCircle, Clock, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO, subMonths } from 'date-fns';
 
 export const Route = createFileRoute("/analysis")({
   component: RouteComponent,
@@ -19,56 +17,60 @@ interface ChequeAnalytics {
   amount: number;
   client_name: string;
   status: string;
-  date: string;
-  issue_date?: string;
+  issue_date: string;
   print_count?: number;
+  handler?: string;
   created_at: string;
 }
 
 const dummyData: ChequeAnalytics[] = [
-  { cheque_id: 1, cheque_number: "1", amount: 12.45, client_name: "James Wilson", status: "Approved", date: "2025-09-15", print_count: 1, created_at: "2025-09-15" },
-  { cheque_id: 2, cheque_number: "2", amount: 567892.45, client_name: "Maria Garcia", status: "Approved", date: "2025-09-20", print_count: 1, created_at: "2025-09-20" },
-  { cheque_id: 3, cheque_number: "3", amount: 83.67, client_name: "Robert Chen", status: "Declined", date: "2025-08-10", created_at: "2025-08-10" },
-  { cheque_id: 4, cheque_number: "4", amount: 789234.56, client_name: "Sarah Johnson", status: "Approved", date: "2025-08-25", print_count: 1, created_at: "2025-08-25" },
-  { cheque_id: 5, cheque_number: "5", amount: 34.5, client_name: "Michael Brown", status: "Pending", date: "2025-10-01", created_at: "2025-10-01" },
-  { cheque_id: 6, cheque_number: "6", amount: 456789.12, client_name: "Emma Davis", status: "Approved", date: "2025-07-05", print_count: 1, created_at: "2025-07-05" },
-  { cheque_id: 7, cheque_number: "7", amount: 89.99, client_name: "David Lee", status: "Approved", date: "2025-07-12", print_count: 1, created_at: "2025-07-12" },
-  { cheque_id: 8, cheque_number: "8", amount: 234567.89, client_name: "Lisa Anderson", status: "Declined", date: "2025-06-18", created_at: "2025-06-18" },
-  { cheque_id: 9, cheque_number: "9", amount: 678901.23, client_name: "John Martinez", status: "Approved", date: "2025-06-22", print_count: 1, created_at: "2025-06-22" },
-  { cheque_id: 10, cheque_number: "10", amount: 123.45, client_name: "Rachel Taylor", status: "Approved", date: "2025-05-30", print_count: 1, created_at: "2025-05-30" },
-  { cheque_id: 11, cheque_number: "11", amount: 2345.67, client_name: "Thomas White", status: "Approved", date: "2025-05-15", print_count: 1, created_at: "2025-05-15" },
-  { cheque_id: 12, cheque_number: "12", amount: 98765.43, client_name: "Jennifer Harris", status: "Pending", date: "2025-10-03", created_at: "2025-10-03" },
-  { cheque_id: 13, cheque_number: "13", amount: 456.78, client_name: "Christopher Clark", status: "Approved", date: "2025-04-20", print_count: 1, created_at: "2025-04-20" },
-  { cheque_id: 14, cheque_number: "14", amount: 876543.21, client_name: "Amanda Lewis", status: "Approved", date: "2025-04-28", print_count: 1, created_at: "2025-04-28" },
-  { cheque_id: 15, cheque_number: "15", amount: 234.56, client_name: "Daniel Walker", status: "Declined", date: "2025-03-10", created_at: "2025-03-10" },
-  { cheque_id: 16, cheque_number: "16", amount: 345678.90, client_name: "Michelle Hall", status: "Approved", date: "2025-03-22", print_count: 1, created_at: "2025-03-22" },
-  { cheque_id: 17, cheque_number: "17", amount: 567.89, client_name: "Kevin Young", status: "Approved", date: "2025-02-14", print_count: 1, created_at: "2025-02-14" },
-  { cheque_id: 18, cheque_number: "18", amount: 123456.78, client_name: "Laura King", status: "Pending", date: "2025-10-05", created_at: "2025-10-05" },
-  { cheque_id: 19, cheque_number: "19", amount: 789.01, client_name: "Brian Scott", status: "Approved", date: "2025-01-18", print_count: 1, created_at: "2025-01-18" },
-  { cheque_id: 20, cheque_number: "20", amount: 987654.32, client_name: "Nicole Green", status: "Approved", date: "2025-01-25", print_count: 1, created_at: "2025-01-25" },
+  { cheque_id: 1, cheque_number: "1", amount: 12.45, client_name: "James Wilson", status: "Approved", issue_date: "2025-09-15", print_count: 1, handler: "System", created_at: "2025-09-15" },
+  { cheque_id: 2, cheque_number: "2", amount: 567892.45, client_name: "Maria Garcia", status: "Approved", issue_date: "2025-09-20", print_count: 1, handler: "John Doe", created_at: "2025-09-20" },
+  { cheque_id: 3, cheque_number: "3", amount: 83.67, client_name: "Robert Chen", status: "Declined", issue_date: "2025-08-10", handler: "Jane Smith", created_at: "2025-08-10" },
+  { cheque_id: 4, cheque_number: "4", amount: 789234.56, client_name: "Sarah Johnson", status: "Approved", issue_date: "2025-08-25", print_count: 1, handler: "System", created_at: "2025-08-25" },
+  { cheque_id: 5, cheque_number: "5", amount: 34.5, client_name: "Michael Brown", status: "Pending", issue_date: "2025-10-01", created_at: "2025-10-01" },
+  { cheque_id: 6, cheque_number: "6", amount: 456789.12, client_name: "Emma Davis", status: "Approved", issue_date: "2025-07-05", print_count: 1, handler: "John Doe", created_at: "2025-07-05" },
+  { cheque_id: 7, cheque_number: "7", amount: 89.99, client_name: "David Lee", status: "Approved", issue_date: "2025-07-12", print_count: 1, handler: "System", created_at: "2025-07-12" },
+  { cheque_id: 8, cheque_number: "8", amount: 234567.89, client_name: "Lisa Anderson", status: "Declined", issue_date: "2025-06-18", handler: "Jane Smith", created_at: "2025-06-18" },
+  { cheque_id: 9, cheque_number: "9", amount: 678901.23, client_name: "John Martinez", status: "Approved", issue_date: "2025-06-22", print_count: 1, handler: "System", created_at: "2025-06-22" },
+  { cheque_id: 10, cheque_number: "10", amount: 123.45, client_name: "Rachel Taylor", status: "Approved", issue_date: "2025-05-30", print_count: 1, handler: "John Doe", created_at: "2025-05-30" },
+  { cheque_id: 11, cheque_number: "11", amount: 2345.67, client_name: "Thomas White", status: "Approved", issue_date: "2025-05-15", print_count: 1, handler: "System", created_at: "2025-05-15" },
+  { cheque_id: 12, cheque_number: "12", amount: 98765.43, client_name: "Jennifer Harris", status: "Pending", issue_date: "2025-10-03", created_at: "2025-10-03" },
+  { cheque_id: 13, cheque_number: "13", amount: 456.78, client_name: "Christopher Clark", status: "Approved", issue_date: "2025-04-20", print_count: 1, handler: "Jane Smith", created_at: "2025-04-20" },
+  { cheque_id: 14, cheque_number: "14", amount: 876543.21, client_name: "Amanda Lewis", status: "Approved", issue_date: "2025-04-28", print_count: 1, handler: "System", created_at: "2025-04-28" },
+  { cheque_id: 15, cheque_number: "15", amount: 234.56, client_name: "Daniel Walker", status: "Declined", issue_date: "2025-03-10", handler: "John Doe", created_at: "2025-03-10" },
+  { cheque_id: 16, cheque_number: "16", amount: 345678.90, client_name: "Michelle Hall", status: "Approved", issue_date: "2025-03-22", print_count: 1, handler: "System", created_at: "2025-03-22" },
+  { cheque_id: 17, cheque_number: "17", amount: 567.89, client_name: "Kevin Young", status: "Approved", issue_date: "2025-02-14", print_count: 1, handler: "Jane Smith", created_at: "2025-02-14" },
+  { cheque_id: 18, cheque_number: "18", amount: 123456.78, client_name: "Laura King", status: "Pending", issue_date: "2025-10-05", created_at: "2025-10-05" },
+  { cheque_id: 19, cheque_number: "19", amount: 789.01, client_name: "Brian Scott", status: "Approved", issue_date: "2025-01-18", print_count: 1, handler: "System", created_at: "2025-01-18" },
+  { cheque_id: 20, cheque_number: "20", amount: 987654.32, client_name: "Nicole Green", status: "Approved", issue_date: "2025-01-25", print_count: 1, handler: "John Doe", created_at: "2025-01-25" },
 ];
 
 type DateFilter = 'all' | 'day' | 'month' | 'year' | 'custom';
-type AnalyticsCategory = 'total-cheques' | 'total-amount' | 'avg-amount' | 'volume-by-month' | 'amount-by-month' | 'top-clients' | 'cheques-per-client' | 'approval-rate' | 'pending-approvals' | 'high-value' | 'declined-analysis' | 'print-status' | 'approved-vs-declined' | 'unsigned-high-value' | 'quarterly-performance';
+type AnalyticsCategory = 'total-cheques' | 'avg-amount' | 'amount-by-month' | 'top-clients' | 'approval-rate' | 'pending-approvals' | 'high-value' | 'declined-analysis' | 'print-status' | 'approved-vs-declined' | 'unsigned-high-value' | 'cheques-by-handler';
+
+type SortDirection = 'asc' | 'desc' | null;
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 function RouteComponent() {
   const [selectedCategory, setSelectedCategory] = useState<AnalyticsCategory>('total-cheques');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredData, setFilteredData] = useState<ChequeAnalytics[]>(dummyData);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [sortColumn, setSortColumn] = useState<keyof ChequeAnalytics | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
   const categories = [
     { id: 'total-cheques' as AnalyticsCategory, label: 'Total Cheques Processed', icon: FileText },
-    { id: 'total-amount' as AnalyticsCategory, label: 'Total Amount Disbursed', icon: DollarSign },
     { id: 'avg-amount' as AnalyticsCategory, label: 'Average Cheque Amount', icon: TrendingUp },
-    { id: 'volume-by-month' as AnalyticsCategory, label: 'Cheque Volume by Month', icon: TrendingUp },
     { id: 'amount-by-month' as AnalyticsCategory, label: 'Total Amount by Month', icon: DollarSign },
     { id: 'top-clients' as AnalyticsCategory, label: 'Top Clients by Amount', icon: Users },
-    { id: 'cheques-per-client' as AnalyticsCategory, label: 'Cheques per Client', icon: Users },
     { id: 'approval-rate' as AnalyticsCategory, label: 'Approval Rate', icon: CheckCircle },
     { id: 'pending-approvals' as AnalyticsCategory, label: 'Pending Approvals', icon: Clock },
     { id: 'high-value' as AnalyticsCategory, label: 'High Value Cheques (>$1500)', icon: DollarSign },
@@ -76,7 +78,7 @@ function RouteComponent() {
     { id: 'print-status' as AnalyticsCategory, label: 'Print Status Overview', icon: Printer },
     { id: 'approved-vs-declined' as AnalyticsCategory, label: 'Approved vs Declined Amounts', icon: TrendingUp },
     { id: 'unsigned-high-value' as AnalyticsCategory, label: 'Unsigned High-Value Cheques', icon: FileText },
-    { id: 'quarterly-performance' as AnalyticsCategory, label: 'Quarterly Performance', icon: TrendingUp },
+    { id: 'cheques-by-handler' as AnalyticsCategory, label: 'Cheques Approved by Handler', icon: Users },
   ];
 
   const getDateFilteredData = useMemo(() => {
@@ -85,55 +87,53 @@ function RouteComponent() {
 
     if (dateFilter === 'day') {
       const today = format(now, 'yyyy-MM-dd');
-      data = data.filter(c => c.date === today);
+      data = data.filter(c => c.issue_date === today);
     } else if (dateFilter === 'month') {
-      const start = startOfMonth(now);
-      const end = endOfMonth(now);
+      const start = startOfMonth(selectedMonth);
+      const end = endOfMonth(selectedMonth);
       data = data.filter(c => {
-        const chequeDate = parseISO(c.date);
+        const chequeDate = parseISO(c.issue_date);
         return isWithinInterval(chequeDate, { start, end });
       });
     } else if (dateFilter === 'year') {
       const start = startOfYear(now);
       const end = endOfYear(now);
       data = data.filter(c => {
-        const chequeDate = parseISO(c.date);
+        const chequeDate = parseISO(c.issue_date);
         return isWithinInterval(chequeDate, { start, end });
       });
     } else if (dateFilter === 'custom' && customDateFrom && customDateTo) {
       data = data.filter(c => {
-        const chequeDate = parseISO(c.date);
+        const chequeDate = parseISO(c.issue_date);
         return isWithinInterval(chequeDate, { start: customDateFrom, end: customDateTo });
       });
     }
 
     return data;
-  }, [dateFilter, customDateFrom, customDateTo]);
+  }, [dateFilter, selectedMonth, customDateFrom, customDateTo]);
 
   const chartData = useMemo(() => {
     const data = getDateFilteredData;
+    const now = new Date();
+    const twelveMonthsAgo = subMonths(now, 11);
 
     switch (selectedCategory) {
       case 'total-cheques':
         return { value: data.length, type: 'number' };
 
-      case 'total-amount':
-        return { value: data.reduce((sum, c) => sum + c.amount, 0), type: 'currency' };
-
       case 'avg-amount':
         return { value: data.length ? data.reduce((sum, c) => sum + c.amount, 0) / data.length : 0, type: 'currency' };
 
-      case 'volume-by-month':
-        const volumeByMonth = data.reduce((acc, c) => {
-          const month = format(parseISO(c.date), 'MMM yyyy');
-          acc[month] = (acc[month] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        return { data: Object.entries(volumeByMonth).map(([name, value]) => ({ name, value })), type: 'bar' };
-
       case 'amount-by-month':
-        const amountByMonth = data.reduce((acc, c) => {
-          const month = format(parseISO(c.date), 'MMM yyyy');
+        const limitedData = dateFilter === 'all' || dateFilter === 'year'
+          ? data.filter(c => {
+              const chequeDate = parseISO(c.issue_date);
+              return chequeDate >= twelveMonthsAgo;
+            })
+          : data;
+
+        const amountByMonth = limitedData.reduce((acc, c) => {
+          const month = format(parseISO(c.issue_date), 'MMM yyyy');
           acc[month] = (acc[month] || 0) + c.amount;
           return acc;
         }, {} as Record<string, number>);
@@ -146,19 +146,6 @@ function RouteComponent() {
         }, {} as Record<string, number>);
         return {
           data: Object.entries(clientAmounts)
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 10)
-            .map(([name, value]) => ({ name, value })),
-          type: 'bar'
-        };
-
-      case 'cheques-per-client':
-        const clientCounts = data.reduce((acc, c) => {
-          acc[c.client_name] = (acc[c.client_name] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        return {
-          data: Object.entries(clientCounts)
             .sort(([, a], [, b]) => b - a)
             .slice(0, 10)
             .map(([name, value]) => ({ name, value })),
@@ -232,22 +219,28 @@ function RouteComponent() {
           type: 'number'
         };
 
-      case 'quarterly-performance':
-        const quarterlyData = data.reduce((acc, c) => {
-          const date = parseISO(c.date);
-          const quarter = `Q${Math.floor(date.getMonth() / 3) + 1} ${date.getFullYear()}`;
-          acc[quarter] = (acc[quarter] || 0) + c.amount;
-          return acc;
-        }, {} as Record<string, number>);
-        return { data: Object.entries(quarterlyData).map(([name, value]) => ({ name, value })), type: 'bar' };
+      case 'cheques-by-handler':
+        const handlerCounts = data
+          .filter(c => c.status === 'Approved' && c.handler)
+          .reduce((acc, c) => {
+            acc[c.handler!] = (acc[c.handler!] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+        return {
+          data: Object.entries(handlerCounts)
+            .sort(([, a], [, b]) => b - a)
+            .map(([name, value]) => ({ name, value })),
+          type: 'bar'
+        };
 
       default:
         return { value: 0, type: 'number' };
     }
-  }, [selectedCategory, getDateFilteredData]);
+  }, [selectedCategory, getDateFilteredData, dateFilter]);
 
   const handleCategoryChange = (category: AnalyticsCategory) => {
     setSelectedCategory(category);
+    setCurrentPage(1);
     const filtered = getDateFilteredData;
 
     switch (category) {
@@ -263,32 +256,84 @@ function RouteComponent() {
       case 'unsigned-high-value':
         setFilteredData(filtered.filter(c => c.amount > 1500 && (!c.print_count || c.print_count === 0)));
         break;
+      case 'cheques-by-handler':
+        setFilteredData(filtered.filter(c => c.status === 'Approved' && c.handler));
+        break;
       default:
         setFilteredData(filtered);
     }
   };
 
-  const searchFilteredData = useMemo(() => {
-    if (!searchQuery) return filteredData;
-    const query = searchQuery.toLowerCase();
-    return filteredData.filter(c =>
-      c.client_name.toLowerCase().includes(query) ||
-      c.cheque_number.toLowerCase().includes(query) ||
-      c.amount.toString().includes(query) ||
-      c.status.toLowerCase().includes(query)
-    );
-  }, [filteredData, searchQuery]);
+  const handleSort = (column: keyof ChequeAnalytics) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc');
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null);
+        setSortColumn(null);
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
 
-  const exportToExcel = () => {
+  const sortedAndFilteredData = useMemo(() => {
+    let data = filteredData;
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      data = data.filter(c =>
+        c.client_name.toLowerCase().includes(query) ||
+        c.cheque_number.toLowerCase().includes(query) ||
+        c.amount.toString().includes(query) ||
+        c.status.toLowerCase().includes(query) ||
+        (c.handler && c.handler.toLowerCase().includes(query))
+      );
+    }
+
+    if (sortColumn && sortDirection) {
+      data = [...data].sort((a, b) => {
+        const aVal = a[sortColumn];
+        const bVal = b[sortColumn];
+
+        if (aVal === undefined || aVal === null) return 1;
+        if (bVal === undefined || bVal === null) return -1;
+
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+
+        const aStr = String(aVal).toLowerCase();
+        const bStr = String(bVal).toLowerCase();
+        return sortDirection === 'asc'
+          ? aStr.localeCompare(bStr)
+          : bStr.localeCompare(aStr);
+      });
+    }
+
+    return data;
+  }, [filteredData, searchQuery, sortColumn, sortDirection]);
+
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedAndFilteredData.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedAndFilteredData, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(sortedAndFilteredData.length / itemsPerPage);
+
+  const exportToCSV = () => {
     const csv = [
-      ['Cheque #', 'Client Name', 'Amount', 'Status', 'Date', 'Print Count'].join(','),
-      ...searchFilteredData.map(c => [
+      ['Cheque #', 'Client Name', 'Amount', 'Status', 'Issue Date', 'Print Count', 'Handler'].join(','),
+      ...sortedAndFilteredData.map(c => [
         c.cheque_number,
-        c.client_name,
+        `"${c.client_name}"`,
         c.amount,
         c.status,
-        c.date,
-        c.print_count || 0
+        c.issue_date,
+        c.print_count || 0,
+        c.handler || 'N/A'
       ].join(','))
     ].join('\n');
 
@@ -298,6 +343,29 @@ function RouteComponent() {
     a.href = url;
     a.download = `analytics-${selectedCategory}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
+  };
+
+  const SortIcon = ({ column }: { column: keyof ChequeAnalytics }) => {
+    if (sortColumn !== column) {
+      return <ChevronsUpDown className="h-4 w-4 ml-1 inline" />;
+    }
+    if (sortDirection === 'asc') {
+      return <ChevronUp className="h-4 w-4 ml-1 inline" />;
+    }
+    return <ChevronDown className="h-4 w-4 ml-1 inline" />;
+  };
+
+  const generateMonthOptions = () => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const month = subMonths(now, i);
+      options.push({
+        value: month.toISOString(),
+        label: format(month, 'MMMM yyyy')
+      });
+    }
+    return options;
   };
 
   return (
@@ -332,17 +400,42 @@ function RouteComponent() {
           <CardContent>
             <select
               value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+              onChange={(e) => {
+                setDateFilter(e.target.value as DateFilter);
+                setCurrentPage(1);
+              }}
               className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
             >
               <option value="all">All Time</option>
               <option value="day">Today</option>
-              <option value="month">This Month</option>
+              <option value="month">Select Month</option>
               <option value="year">This Year</option>
               <option value="custom">Custom Range</option>
             </select>
           </CardContent>
         </Card>
+
+        {dateFilter === 'month' && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Select Month</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <select
+                value={selectedMonth.toISOString()}
+                onChange={(e) => {
+                  setSelectedMonth(new Date(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
+              >
+                {generateMonthOptions().map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </CardContent>
+          </Card>
+        )}
 
         {dateFilter === 'custom' && (
           <>
@@ -351,17 +444,15 @@ function RouteComponent() {
                 <CardTitle className="text-sm font-medium">From Date</CardTitle>
               </CardHeader>
               <CardContent>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateFrom ? format(customDateFrom, 'PP') : 'Pick date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={customDateFrom} onSelect={setCustomDateFrom} initialFocus />
-                  </PopoverContent>
-                </Popover>
+                <input
+                  type="date"
+                  value={customDateFrom ? format(customDateFrom, 'yyyy-MM-dd') : ''}
+                  onChange={(e) => {
+                    setCustomDateFrom(e.target.value ? new Date(e.target.value) : undefined);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
+                />
               </CardContent>
             </Card>
 
@@ -370,17 +461,15 @@ function RouteComponent() {
                 <CardTitle className="text-sm font-medium">To Date</CardTitle>
               </CardHeader>
               <CardContent>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateTo ? format(customDateTo, 'PP') : 'Pick date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={customDateTo} onSelect={setCustomDateTo} initialFocus />
-                  </PopoverContent>
-                </Popover>
+                <input
+                  type="date"
+                  value={customDateTo ? format(customDateTo, 'yyyy-MM-dd') : ''}
+                  onChange={(e) => {
+                    setCustomDateTo(e.target.value ? new Date(e.target.value) : undefined);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
+                />
               </CardContent>
             </Card>
           </>
@@ -421,7 +510,7 @@ function RouteComponent() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip formatter={(value: number) => `$${value.toLocaleString()}`} />
+                <Tooltip formatter={(value: number) => selectedCategory === 'cheques-by-handler' ? value : `$${value.toLocaleString()}`} />
                 <Bar dataKey="value" fill="#3b82f6" />
               </BarChart>
             </ResponsiveContainer>
@@ -481,11 +570,14 @@ function RouteComponent() {
                 <Input
                   placeholder="Search..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="pl-9 w-64"
                 />
               </div>
-              <Button onClick={exportToExcel} size="sm">
+              <Button onClick={exportToCSV} size="sm">
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
@@ -497,16 +589,59 @@ function RouteComponent() {
             <table className="w-full">
               <thead className="bg-muted">
                 <tr>
-                  <th className="p-3 text-left text-sm font-medium">Cheque #</th>
-                  <th className="p-3 text-left text-sm font-medium">Client Name</th>
-                  <th className="p-3 text-right text-sm font-medium">Amount</th>
-                  <th className="p-3 text-left text-sm font-medium">Status</th>
-                  <th className="p-3 text-left text-sm font-medium">Date</th>
-                  <th className="p-3 text-center text-sm font-medium">Print Count</th>
+                  <th
+                    className="p-3 text-left text-sm font-medium cursor-pointer hover:bg-muted/80"
+                    onClick={() => handleSort('cheque_number')}
+                  >
+                    Cheque #
+                    <SortIcon column="cheque_number" />
+                  </th>
+                  <th
+                    className="p-3 text-left text-sm font-medium cursor-pointer hover:bg-muted/80"
+                    onClick={() => handleSort('client_name')}
+                  >
+                    Client Name
+                    <SortIcon column="client_name" />
+                  </th>
+                  <th
+                    className="p-3 text-right text-sm font-medium cursor-pointer hover:bg-muted/80"
+                    onClick={() => handleSort('amount')}
+                  >
+                    Amount
+                    <SortIcon column="amount" />
+                  </th>
+                  <th
+                    className="p-3 text-left text-sm font-medium cursor-pointer hover:bg-muted/80"
+                    onClick={() => handleSort('status')}
+                  >
+                    Status
+                    <SortIcon column="status" />
+                  </th>
+                  <th
+                    className="p-3 text-left text-sm font-medium cursor-pointer hover:bg-muted/80"
+                    onClick={() => handleSort('issue_date')}
+                  >
+                    Issue Date
+                    <SortIcon column="issue_date" />
+                  </th>
+                  <th
+                    className="p-3 text-center text-sm font-medium cursor-pointer hover:bg-muted/80"
+                    onClick={() => handleSort('print_count')}
+                  >
+                    Print Count
+                    <SortIcon column="print_count" />
+                  </th>
+                  <th
+                    className="p-3 text-left text-sm font-medium cursor-pointer hover:bg-muted/80"
+                    onClick={() => handleSort('handler')}
+                  >
+                    Handler
+                    <SortIcon column="handler" />
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {searchFilteredData.map((cheque) => (
+                {paginatedData.map((cheque) => (
                   <tr key={cheque.cheque_id} className="border-b hover:bg-muted/50">
                     <td className="p-3 text-sm">{cheque.cheque_number}</td>
                     <td className="p-3 text-sm">{cheque.client_name}</td>
@@ -522,18 +657,61 @@ function RouteComponent() {
                         {cheque.status}
                       </span>
                     </td>
-                    <td className="p-3 text-sm">{format(parseISO(cheque.date), 'MMM dd, yyyy')}</td>
+                    <td className="p-3 text-sm">{format(parseISO(cheque.issue_date), 'MMM dd, yyyy')}</td>
                     <td className="p-3 text-sm text-center">{cheque.print_count || 0}</td>
+                    <td className="p-3 text-sm">{cheque.handler || 'N/A'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {searchFilteredData.length === 0 && (
+            {paginatedData.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 No data available for the selected filters
               </div>
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Items per page:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="border border-input rounded-md px-2 py-1 text-sm bg-background"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
