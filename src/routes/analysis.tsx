@@ -4,10 +4,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Search, TrendingUp, DollarSign, Users, FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Download, Search, TrendingUp, DollarSign, Users, FileText, CheckCircle, XCircle, Clock, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO, subMonths } from 'date-fns';
-import noDataImage from '@/assets/cq6QnU2UR9GdEBaT-35qUw.webp';
 
 export const Route = createFileRoute("/analysis")({
   component: RouteComponent,
@@ -678,13 +677,8 @@ function RouteComponent() {
               </tbody>
             </table>
             {paginatedData.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <img
-                  src={noDataImage}
-                  alt="No data available"
-                  className="w-64 h-auto mb-4 opacity-80"
-                />
-                <p className="text-muted-foreground text-lg">No data available for the selected filters</p>
+              <div className="text-center py-8 text-muted-foreground">
+                No data available for the selected filters
               </div>
             )}
           </div>

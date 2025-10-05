@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/sidebar";
 import "../App.css";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { Toaster } from "react-hot-toast";
+import noDataImage from '@/assets/cq6QnU2UR9GdEBaT-35qUw.webp';
 
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
@@ -41,5 +42,16 @@ export const Route = createRootRoute({
       </div>
       <TanStackRouterDevtools />
     </ThemeProvider>
+  ),
+  notFoundComponent: () => (
+    <div className="flex flex-col items-center justify-center min-h-screen p-8">
+      <img
+        src={noDataImage}
+        alt="Welcome"
+        className="w-96 h-auto mb-6 opacity-90"
+      />
+      <h1 className="text-3xl font-semibold text-foreground mb-2">Welcome to Cheque Management System</h1>
+      <p className="text-muted-foreground text-lg">Select an option from the sidebar to get started</p>
+    </div>
   ),
 });
