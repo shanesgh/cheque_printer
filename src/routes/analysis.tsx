@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Search, TrendingUp, DollarSign, Users, FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Download, Search, TrendingUp, DollarSign, Users, FileText, CheckCircle, XCircle, Clock, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO, subMonths } from 'date-fns';
 
@@ -23,29 +24,6 @@ interface ChequeAnalytics {
   created_at: string;
 }
 
-const dummyData: ChequeAnalytics[] = [
-  { cheque_id: 1, cheque_number: "1", amount: 12.45, client_name: "James Wilson", status: "Approved", issue_date: "2025-09-15", print_count: 1, handler: "System", created_at: "2025-09-15" },
-  { cheque_id: 2, cheque_number: "2", amount: 567892.45, client_name: "Maria Garcia", status: "Approved", issue_date: "2025-09-20", print_count: 1, handler: "John Doe", created_at: "2025-09-20" },
-  { cheque_id: 3, cheque_number: "3", amount: 83.67, client_name: "Robert Chen", status: "Declined", issue_date: "2025-08-10", handler: "Jane Smith", created_at: "2025-08-10" },
-  { cheque_id: 4, cheque_number: "4", amount: 789234.56, client_name: "Sarah Johnson", status: "Approved", issue_date: "2025-08-25", print_count: 1, handler: "System", created_at: "2025-08-25" },
-  { cheque_id: 5, cheque_number: "5", amount: 34.5, client_name: "Michael Brown", status: "Pending", issue_date: "2025-10-01", created_at: "2025-10-01" },
-  { cheque_id: 6, cheque_number: "6", amount: 456789.12, client_name: "Emma Davis", status: "Approved", issue_date: "2025-07-05", print_count: 1, handler: "John Doe", created_at: "2025-07-05" },
-  { cheque_id: 7, cheque_number: "7", amount: 89.99, client_name: "David Lee", status: "Approved", issue_date: "2025-07-12", print_count: 1, handler: "System", created_at: "2025-07-12" },
-  { cheque_id: 8, cheque_number: "8", amount: 234567.89, client_name: "Lisa Anderson", status: "Declined", issue_date: "2025-06-18", handler: "Jane Smith", created_at: "2025-06-18" },
-  { cheque_id: 9, cheque_number: "9", amount: 678901.23, client_name: "John Martinez", status: "Approved", issue_date: "2025-06-22", print_count: 1, handler: "System", created_at: "2025-06-22" },
-  { cheque_id: 10, cheque_number: "10", amount: 123.45, client_name: "Rachel Taylor", status: "Approved", issue_date: "2025-05-30", print_count: 1, handler: "John Doe", created_at: "2025-05-30" },
-  { cheque_id: 11, cheque_number: "11", amount: 2345.67, client_name: "Thomas White", status: "Approved", issue_date: "2025-05-15", print_count: 1, handler: "System", created_at: "2025-05-15" },
-  { cheque_id: 12, cheque_number: "12", amount: 98765.43, client_name: "Jennifer Harris", status: "Pending", issue_date: "2025-10-03", created_at: "2025-10-03" },
-  { cheque_id: 13, cheque_number: "13", amount: 456.78, client_name: "Christopher Clark", status: "Approved", issue_date: "2025-04-20", print_count: 1, handler: "Jane Smith", created_at: "2025-04-20" },
-  { cheque_id: 14, cheque_number: "14", amount: 876543.21, client_name: "Amanda Lewis", status: "Approved", issue_date: "2025-04-28", print_count: 1, handler: "System", created_at: "2025-04-28" },
-  { cheque_id: 15, cheque_number: "15", amount: 234.56, client_name: "Daniel Walker", status: "Declined", issue_date: "2025-03-10", handler: "John Doe", created_at: "2025-03-10" },
-  { cheque_id: 16, cheque_number: "16", amount: 345678.90, client_name: "Michelle Hall", status: "Approved", issue_date: "2025-03-22", print_count: 1, handler: "System", created_at: "2025-03-22" },
-  { cheque_id: 17, cheque_number: "17", amount: 567.89, client_name: "Kevin Young", status: "Approved", issue_date: "2025-02-14", print_count: 1, handler: "Jane Smith", created_at: "2025-02-14" },
-  { cheque_id: 18, cheque_number: "18", amount: 123456.78, client_name: "Laura King", status: "Pending", issue_date: "2025-10-05", created_at: "2025-10-05" },
-  { cheque_id: 19, cheque_number: "19", amount: 789.01, client_name: "Brian Scott", status: "Approved", issue_date: "2025-01-18", print_count: 1, handler: "System", created_at: "2025-01-18" },
-  { cheque_id: 20, cheque_number: "20", amount: 987654.32, client_name: "Nicole Green", status: "Approved", issue_date: "2025-01-25", print_count: 1, handler: "John Doe", created_at: "2025-01-25" },
-];
-
 type DateFilter = 'all' | 'day' | 'month' | 'year' | 'custom';
 type AnalyticsCategory = 'total-cheques' | 'avg-amount' | 'amount-by-month' | 'top-clients' | 'approval-rate' | 'pending-approvals' | 'high-value' | 'declined-analysis' | 'print-status' | 'approved-vs-declined' | 'unsigned-high-value' | 'cheques-by-handler';
 
@@ -60,8 +38,10 @@ function RouteComponent() {
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredData, setFilteredData] = useState<ChequeAnalytics[]>(dummyData);
+  const [cheques, setCheques] = useState<ChequeAnalytics[]>([]);
+  const [filteredData, setFilteredData] = useState<ChequeAnalytics[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [sortColumn, setSortColumn] = useState<keyof ChequeAnalytics | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -81,8 +61,25 @@ function RouteComponent() {
     { id: 'cheques-by-handler' as AnalyticsCategory, label: 'Cheques Approved by Handler', icon: Users },
   ];
 
+  useEffect(() => {
+    const fetchCheques = async () => {
+      setLoading(true);
+      try {
+        const response = await invoke<string>("get_all_cheques");
+        const data = JSON.parse(response);
+        setCheques(data.cheques || []);
+      } catch (error) {
+        console.error("Failed to fetch cheques:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCheques();
+  }, []);
+
   const getDateFilteredData = useMemo(() => {
-    let data = [...dummyData];
+    let data = [...cheques];
     const now = new Date();
 
     if (dateFilter === 'day') {
@@ -110,7 +107,7 @@ function RouteComponent() {
     }
 
     return data;
-  }, [dateFilter, selectedMonth, customDateFrom, customDateTo]);
+  }, [cheques, dateFilter, selectedMonth, customDateFrom, customDateTo]);
 
   const chartData = useMemo(() => {
     const data = getDateFilteredData;
