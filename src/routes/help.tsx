@@ -15,6 +15,7 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  useDroppable,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -40,6 +41,16 @@ interface KanbanComment {
   comment_text: string;
   created_at: string;
   updated_at: string;
+}
+
+function DroppableColumn({ id, status, children }: { id: string; status: string; children: React.ReactNode }) {
+  const { setNodeRef } = useDroppable({ id });
+
+  return (
+    <div ref={setNodeRef} className="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[100px]">
+      {children}
+    </div>
+  );
 }
 
 function SortableNote({ note, openNoteDetail, deleteNote, editingNote, setEditingNote, updateNote, comments, getTypeColor, getTypeIcon, formatDateTime }: any) {
@@ -470,9 +481,7 @@ function RouteComponent() {
                       items={columnNotes.map(n => n.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div
-                        className="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[100px]"
-                      >
+                      <DroppableColumn id={`droppable-${status}`} status={status}>
                         {columnNotes.map((note) => (
                           <SortableNote
                             key={note.id}
@@ -488,7 +497,7 @@ function RouteComponent() {
                             formatDateTime={formatDateTime}
                           />
                         ))}
-                      </div>
+                      </DroppableColumn>
                     </SortableContext>
                   </div>
                 </div>

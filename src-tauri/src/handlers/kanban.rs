@@ -29,10 +29,10 @@ pub async fn create_kanban_note(
         return Err(DataError::Custom("Note title cannot be empty".to_string()));
     }
 
-    let valid_types = ["bug", "feature", "task", "enhancement"];
+    let valid_types = ["issue", "feature", "request"];
     if !valid_types.contains(&note_type.as_str()) {
         return Err(DataError::Custom(format!(
-            "Invalid note type '{}'. Must be one of: bug, feature, task, or enhancement",
+            "Invalid note type '{}'. Must be one of: issue, feature, or request",
             note_type
         )));
     }

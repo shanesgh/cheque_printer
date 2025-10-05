@@ -82,7 +82,8 @@ pub async fn update_cheque_status(
 
     let result = if new_status == "Approved" && remarks.is_some() {
         sqlx::query!(
-            "UPDATE cheques SET status = ?, current_signatures = 1, first_signature_user_id = 1, remarks = ? WHERE id = ?",
+            "UPDATE cheques SET status = ?, current_signatures = 1, first_signature_user_id = 1, remarks = ?,
+             issue_date = COALESCE(issue_date, datetime('now', 'localtime')) WHERE id = ?",
             new_status,
             remarks,
             cheque_id
@@ -91,7 +92,8 @@ pub async fn update_cheque_status(
         .await
     } else if new_status == "Approved" {
         sqlx::query!(
-            "UPDATE cheques SET status = ?, current_signatures = 1, first_signature_user_id = 1 WHERE id = ?",
+            "UPDATE cheques SET status = ?, current_signatures = 1, first_signature_user_id = 1,
+             issue_date = COALESCE(issue_date, datetime('now', 'localtime')) WHERE id = ?",
             new_status,
             cheque_id
         )
@@ -194,7 +196,8 @@ pub async fn increment_print_count(
     pool: State<'_, SqlitePool>,
 ) -> Result<()> {
     let rows_affected = sqlx::query!(
-        "UPDATE cheques SET print_count = COALESCE(print_count, 0) + 1 WHERE id = ?",
+        "UPDATE cheques SET print_count = COALESCE(print_count, 0) + 1,
+         issue_date = COALESCE(issue_date, datetime('now', 'localtime')) WHERE id = ?",
         cheque_id
     )
     .execute(pool.inner())
