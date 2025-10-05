@@ -5,8 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Bug, Lightbulb, RefreshCw, MessageSquare, X, Clock } from "lucide-react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { Plus, Trash2, Bug, Lightbulb, RefreshCw, MessageSquare, X, Clock, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export const Route = createFileRoute("/help")({
   component: RouteComponent,
@@ -31,6 +42,100 @@ interface KanbanComment {
   updated_at: string;
 }
 
+function SortableNote({ note, openNoteDetail, deleteNote, editingNote, setEditingNote, updateNote, comments, getTypeColor, getTypeIcon, formatDateTime }: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: note.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow p-2 border ${
+        isDragging ? 'shadow-lg' : ''
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing pt-1 flex-shrink-0"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1 min-w-0" onClick={() => openNoteDetail(note.id)}>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Badge className={`${getTypeColor(note.note_type)} border-0 flex items-center gap-1 px-1.5 py-0 text-xs`}>
+              {getTypeIcon(note.note_type)}
+              <span className="capitalize">{note.note_type}</span>
+            </Badge>
+          </div>
+          {editingNote === note.id ? (
+            <Input
+              defaultValue={note.title}
+              onBlur={(e) => updateNote(note.id, e.target.value, note.description || '')}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  updateNote(note.id, e.currentTarget.value, note.description || '');
+                }
+                if (e.key === 'Escape') {
+                  setEditingNote(null);
+                }
+              }}
+              className="text-sm h-7 px-2"
+              autoFocus
+            />
+          ) : (
+            <h4 className="text-sm font-medium mb-1 break-words cursor-pointer">
+              {note.title}
+            </h4>
+          )}
+          {note.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{note.description}</p>
+          )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatDateTime(note.created_at)}
+              </span>
+              {comments[note.id]?.length > 0 && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <MessageSquare className="h-3 w-3" />
+                  {comments[note.id].length}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            deleteNote(note.id);
+          }}
+          className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function RouteComponent() {
   const [notes, setNotes] = useState<KanbanNote[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -38,11 +143,20 @@ function RouteComponent() {
   const [selectedNote, setSelectedNote] = useState<number | null>(null);
   const [comments, setComments] = useState<Record<number, KanbanComment[]>>({});
   const [newComment, setNewComment] = useState("");
+  const [activeId, setActiveId] = useState<number | null>(null);
   const [newNote, setNewNote] = useState({
     title: "",
     description: "",
     note_type: "issue" as const,
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const fetchNotes = async () => {
     try {
@@ -128,24 +242,37 @@ function RouteComponent() {
     }
   };
 
-  const onDragEnd = async (result: any) => {
-    if (!result.destination) return;
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as number);
+  };
 
-    const { source, destination } = result;
-    const noteId = parseInt(result.draggableId);
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
 
-    if (source.droppableId !== destination.droppableId) {
+    if (!over) return;
+
+    const activeNote = notes.find(n => n.id === active.id);
+    if (!activeNote) return;
+
+    const overId = over.id as string;
+    const newStatus = overId.startsWith('droppable-')
+      ? overId.replace('droppable-', '')
+      : notes.find(n => n.id === over.id)?.status;
+
+    if (newStatus && activeNote.status !== newStatus) {
       try {
         await invoke("update_kanban_note_status", {
-          id: noteId,
-          status: destination.droppableId,
-          position: destination.index,
+          id: activeNote.id,
+          status: newStatus,
+          position: 0,
         });
         fetchNotes();
       } catch (error) {
         console.error("Failed to update note:", error);
       }
     }
+
+    setActiveId(null);
   };
 
   const typeConfig = {
@@ -185,6 +312,7 @@ function RouteComponent() {
   }, []);
 
   const selectedNoteData = notes.find(n => n.id === selectedNote);
+  const activeNote = notes.find(n => n.id === activeId);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
@@ -317,119 +445,70 @@ function RouteComponent() {
           </div>
         )}
 
-        <DragDropContext onDragEnd={onDragEnd}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
           <div className="flex gap-3 h-full">
-            {["todo", "in_progress", "done"].map((status) => (
-              <div key={status} className="flex-shrink-0 w-[272px] flex flex-col max-h-full">
-                <div className="bg-muted/50 rounded-lg flex flex-col max-h-full shadow-sm border">
-                  <div className="px-3 py-2 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">
-                      {status === "todo" ? "To Do" : status === "in_progress" ? "In Progress" : "Done"}
-                    </h3>
-                    <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                      {getColumnNotes(status).length}
-                    </Badge>
-                  </div>
-                  <Droppable droppableId={status}>
-                    {(provided, snapshot) => (
+            {["todo", "in_progress", "done"].map((status) => {
+              const columnNotes = getColumnNotes(status);
+              return (
+                <div key={status} className="flex-shrink-0 w-[272px] flex flex-col max-h-full">
+                  <div className="bg-muted/50 rounded-lg flex flex-col max-h-full shadow-sm border">
+                    <div className="px-3 py-2 flex items-center justify-between">
+                      <h3 className="text-sm font-semibold">
+                        {status === "todo" ? "To Do" : status === "in_progress" ? "In Progress" : "Done"}
+                      </h3>
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                        {columnNotes.length}
+                      </Badge>
+                    </div>
+                    <SortableContext
+                      id={`droppable-${status}`}
+                      items={columnNotes.map(n => n.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
                       <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className={`flex-1 overflow-y-auto px-2 pb-2 space-y-2 ${
-                          snapshot.isDraggingOver ? 'bg-accent' : ''
-                        }`}
-                        style={{ minHeight: '100px' }}
+                        className="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[100px]"
                       >
-                        {getColumnNotes(status).map((note, index) => (
-                          <Draggable
+                        {columnNotes.map((note) => (
+                          <SortableNote
                             key={note.id}
-                            draggableId={note.id.toString()}
-                            index={index}
-                          >
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer p-2 border ${
-                                  snapshot.isDragging ? 'rotate-3 shadow-lg' : ''
-                                }`}
-                                onClick={() => openNoteDetail(note.id)}
-                              >
-                                <div className="flex items-start gap-2">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5 mb-1.5">
-                                      <Badge className={`${getTypeColor(note.note_type)} border-0 flex items-center gap-1 px-1.5 py-0 text-xs`}>
-                                        {getTypeIcon(note.note_type)}
-                                        <span className="capitalize">{note.note_type}</span>
-                                      </Badge>
-                                    </div>
-                                    {editingNote === note.id ? (
-                                      <Input
-                                        defaultValue={note.title}
-                                        onBlur={(e) => updateNote(note.id, e.target.value, note.description || '')}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') {
-                                            updateNote(note.id, e.currentTarget.value, note.description || '');
-                                          }
-                                          if (e.key === 'Escape') {
-                                            setEditingNote(null);
-                                          }
-                                        }}
-                                        className="text-sm h-7 px-2"
-                                        autoFocus
-                                      />
-                                    ) : (
-                                      <h4
-                                        className="text-sm font-medium mb-1 break-words"
-                                      >
-                                        {note.title}
-                                      </h4>
-                                    )}
-                                    {note.description && (
-                                      <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{note.description}</p>
-                                    )}
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                          <Clock className="h-3 w-3" />
-                                          {formatDateTime(note.created_at)}
-                                        </span>
-                                        {comments[note.id]?.length > 0 && (
-                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <MessageSquare className="h-3 w-3" />
-                                            {comments[note.id].length}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteNote(note.id);
-                                    }}
-                                    className="h-6 w-6 p-0 hover:bg-red-50 hover:text-red-600 flex-shrink-0"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
+                            note={note}
+                            openNoteDetail={openNoteDetail}
+                            deleteNote={deleteNote}
+                            editingNote={editingNote}
+                            setEditingNote={setEditingNote}
+                            updateNote={updateNote}
+                            comments={comments}
+                            getTypeColor={getTypeColor}
+                            getTypeIcon={getTypeIcon}
+                            formatDateTime={formatDateTime}
+                          />
                         ))}
-                        {provided.placeholder}
                       </div>
-                    )}
-                  </Droppable>
+                    </SortableContext>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </DragDropContext>
+          <DragOverlay>
+            {activeNote ? (
+              <div className="bg-card rounded-lg shadow-lg p-2 border opacity-90 w-[256px]">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Badge className={`${getTypeColor(activeNote.note_type)} border-0 flex items-center gap-1 px-1.5 py-0 text-xs`}>
+                    {getTypeIcon(activeNote.note_type)}
+                    <span className="capitalize">{activeNote.note_type}</span>
+                  </Badge>
+                </div>
+                <h4 className="text-sm font-medium">{activeNote.title}</h4>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       </div>
     </div>
   );
