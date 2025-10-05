@@ -84,25 +84,40 @@ function RouteComponent() {
 
     if (dateFilter === 'day') {
       const today = format(now, 'yyyy-MM-dd');
-      data = data.filter(c => c.issue_date === today);
+      data = data.filter(c => c.issue_date && c.issue_date === today);
     } else if (dateFilter === 'month') {
       const start = startOfMonth(selectedMonth);
       const end = endOfMonth(selectedMonth);
       data = data.filter(c => {
-        const chequeDate = parseISO(c.issue_date);
-        return isWithinInterval(chequeDate, { start, end });
+        if (!c.issue_date) return false;
+        try {
+          const chequeDate = parseISO(c.issue_date);
+          return isWithinInterval(chequeDate, { start, end });
+        } catch {
+          return false;
+        }
       });
     } else if (dateFilter === 'year') {
       const start = startOfYear(now);
       const end = endOfYear(now);
       data = data.filter(c => {
-        const chequeDate = parseISO(c.issue_date);
-        return isWithinInterval(chequeDate, { start, end });
+        if (!c.issue_date) return false;
+        try {
+          const chequeDate = parseISO(c.issue_date);
+          return isWithinInterval(chequeDate, { start, end });
+        } catch {
+          return false;
+        }
       });
     } else if (dateFilter === 'custom' && customDateFrom && customDateTo) {
       data = data.filter(c => {
-        const chequeDate = parseISO(c.issue_date);
-        return isWithinInterval(chequeDate, { start: customDateFrom, end: customDateTo });
+        if (!c.issue_date) return false;
+        try {
+          const chequeDate = parseISO(c.issue_date);
+          return isWithinInterval(chequeDate, { start: customDateFrom, end: customDateTo });
+        } catch {
+          return false;
+        }
       });
     }
 
@@ -124,14 +139,24 @@ function RouteComponent() {
       case 'amount-by-month':
         const limitedData = dateFilter === 'all' || dateFilter === 'year'
           ? data.filter(c => {
-              const chequeDate = parseISO(c.issue_date);
-              return chequeDate >= twelveMonthsAgo;
+              if (!c.issue_date) return false;
+              try {
+                const chequeDate = parseISO(c.issue_date);
+                return chequeDate >= twelveMonthsAgo;
+              } catch {
+                return false;
+              }
             })
           : data;
 
         const amountByMonth = limitedData.reduce((acc, c) => {
-          const month = format(parseISO(c.issue_date), 'MMM yyyy');
-          acc[month] = (acc[month] || 0) + c.amount;
+          if (!c.issue_date) return acc;
+          try {
+            const month = format(parseISO(c.issue_date), 'MMM yyyy');
+            acc[month] = (acc[month] || 0) + c.amount;
+          } catch {
+            // Skip invalid dates
+          }
           return acc;
         }, {} as Record<string, number>);
         return { data: Object.entries(amountByMonth).map(([name, value]) => ({ name, value })), type: 'line' };
