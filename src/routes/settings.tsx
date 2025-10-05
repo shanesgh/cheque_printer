@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUserStore } from "@/store/userStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { UserRole, UserType } from "@/types";
-import { Shield, Users, Database, Bell, Trash2, Edit, Plus, Upload, X } from "lucide-react";
+import { Shield, Users, Database, Bell, Trash2, CreditCard as Edit, Plus, Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
 
 export const Route = createFileRoute("/settings")({
