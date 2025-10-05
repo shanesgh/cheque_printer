@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Search, TrendingUp, DollarSign, Users, FileText, CircleCheck as CheckCircle, Circle as XCircle, Clock, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Download, Search, TrendingUp, DollarSign, Users, FileText, CheckCircle, XCircle, Clock, Printer, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, isWithinInterval, parseISO, subMonths } from 'date-fns';
 
@@ -238,12 +238,10 @@ function RouteComponent() {
     }
   }, [selectedCategory, getDateFilteredData, dateFilter]);
 
-  const handleCategoryChange = (category: AnalyticsCategory) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
+  useEffect(() => {
     const filtered = getDateFilteredData;
 
-    switch (category) {
+    switch (selectedCategory) {
       case 'pending-approvals':
         setFilteredData(filtered.filter(c => c.status === 'Pending'));
         break;
@@ -262,6 +260,11 @@ function RouteComponent() {
       default:
         setFilteredData(filtered);
     }
+  }, [selectedCategory, getDateFilteredData]);
+
+  const handleCategoryChange = (category: AnalyticsCategory) => {
+    setSelectedCategory(category);
+    setCurrentPage(1);
   };
 
   const handleSort = (column: keyof ChequeAnalytics) => {
@@ -300,6 +303,18 @@ function RouteComponent() {
 
         if (aVal === undefined || aVal === null) return 1;
         if (bVal === undefined || bVal === null) return -1;
+
+        if (sortColumn === 'cheque_number') {
+          const aNum = parseInt(String(aVal), 10);
+          const bNum = parseInt(String(bVal), 10);
+          return sortDirection === 'asc' ? aNum - bNum : bNum - aNum;
+        }
+
+        if (sortColumn === 'print_count') {
+          const aNum = Number(aVal) || 0;
+          const bNum = Number(bVal) || 0;
+          return sortDirection === 'asc' ? aNum - bNum : bNum - aNum;
+        }
 
         if (typeof aVal === 'number' && typeof bVal === 'number') {
           return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
