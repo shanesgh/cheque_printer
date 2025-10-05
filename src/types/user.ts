@@ -13,6 +13,7 @@ export type UserType = {
   email: string;
   first_name: string;
   last_name: string;
+  signature_image?: string;
   created_at: string;
   updated_at: string;
   is_active?: boolean;

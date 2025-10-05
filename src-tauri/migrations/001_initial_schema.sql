@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT DEFAULT 'user',
     first_name TEXT,
     last_name TEXT,
+    signature_image BLOB,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_login DATETIME
 );

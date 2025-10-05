@@ -9,9 +9,11 @@ interface UserStore {
   role: UserRole;
   userId: number;
   permissions: string[];
+  signatureImage?: string;
   users: UserType[];
   setUserData: (data: { firstName: string; lastName: string; email: string }) => void;
   setRole: (role: UserRole) => void;
+  setSignatureImage: (signature: string | undefined) => void;
   setUsers: (users: UserType[]) => void;
   addUser: (user: UserType) => void;
   updateUser: (userId: number, updates: Partial<UserType>) => void;
@@ -27,9 +29,11 @@ export const useUserStore = create<UserStore>()(
       role: UserRole.Admin,
       userId: 1,
       permissions: ['all'],
+      signatureImage: undefined,
       users: [],
       setUserData: (data) => set(data),
       setRole: (role) => set({ role }),
+      setSignatureImage: (signature) => set({ signatureImage: signature }),
       setUsers: (users) => set({ users }),
       addUser: (user) => set((state) => ({ users: [...state.users, user] })),
       updateUser: (userId, updates) =>

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,16 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import { useUserStore } from "@/store/userStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { UserRole, UserType } from "@/types";
-import { Shield, Users, Database, Bell, Trash2, Edit, Plus } from "lucide-react";
+import { Shield, Users, Database, Bell, Trash2, Edit, Plus, Upload, X } from "lucide-react";
+import toast from "react-hot-toast";
 
 export const Route = createFileRoute("/settings")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { firstName, lastName, email, role, users, setUserData, addUser, updateUser, deleteUser } = useUserStore();
+  const { firstName, lastName, email, role, users, signatureImage, setUserData, setSignatureImage, addUser, updateUser, deleteUser } = useUserStore();
   const { settings, updateSecuritySettings, updateSystemSettings, updateNotificationSettings } = useSettingsStore();
-  
+
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'users' | 'system' | 'notifications'>('profile');
   const [localFirstName, setLocalFirstName] = useState(firstName);
   const [localLastName, setLocalLastName] = useState(lastName);
@@ -32,6 +33,7 @@ function RouteComponent() {
     role: UserRole.Accountant,
     is_active: true,
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getInitials = () => {
     return `${localFirstName.charAt(0)}${localLastName.charAt(0)}`.toUpperCase();
@@ -62,6 +64,37 @@ function RouteComponent() {
       setNewUser({ first_name: '', last_name: '', email: '', role: UserRole.Accountant, is_active: true });
       setShowAddUser(false);
     }
+  };
+
+  const handleSignatureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setSignatureImage(base64);
+      toast.success('Signature uploaded successfully');
+    };
+    reader.onerror = () => {
+      toast.error('Failed to upload signature');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveSignature = () => {
+    setSignatureImage(undefined);
+    toast.success('Signature removed');
   };
 
   const tabs = [
@@ -135,7 +168,63 @@ function RouteComponent() {
                   <label className="text-sm font-medium">Role</label>
                   <Badge variant="secondary">{role}</Badge>
                 </div>
-                
+
+                <Separator />
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Signature</label>
+                  <p className="text-xs text-muted-foreground mb-3">Upload your signature image for cheque approval</p>
+
+                  {signatureImage ? (
+                    <div className="space-y-3">
+                      <div className="border rounded-lg p-4 bg-muted/50 flex items-center justify-center">
+                        <img
+                          src={signatureImage}
+                          alt="Signature"
+                          className="max-h-32 max-w-full object-contain"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex-1"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Replace Signature
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRemoveSignature}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Signature
+                    </Button>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleSignatureUpload}
+                    className="hidden"
+                  />
+                </div>
+
                 <Button className="w-full" onClick={handleSave}>Save Changes</Button>
               </CardContent>
             </Card>
