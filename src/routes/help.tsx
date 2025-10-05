@@ -197,7 +197,7 @@ function RouteComponent() {
           size="sm"
         >
           <Plus className="h-4 w-4 mr-1" />
-          Add Card
+          Add Note
         </Button>
       </div>
 
@@ -206,7 +206,7 @@ function RouteComponent() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowAddForm(false)}>
             <Card className="w-full max-w-md shadow-2xl border-0" onClick={(e) => e.stopPropagation()}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Add Card</CardTitle>
+                <CardTitle className="text-base">Add Note</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Input
@@ -232,7 +232,7 @@ function RouteComponent() {
                   <option value="request">Request</option>
                 </select>
                 <div className="flex gap-2 pt-2">
-                  <Button onClick={createNote} size="sm">Add Card</Button>
+                  <Button onClick={createNote} size="sm" disabled={!newNote.title.trim()}>Add Note</Button>
                   <Button variant="ghost" onClick={() => setShowAddForm(false)} size="sm">Cancel</Button>
                 </div>
               </CardContent>
