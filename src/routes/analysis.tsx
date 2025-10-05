@@ -694,7 +694,9 @@ function RouteComponent() {
                         {cheque.status}
                       </span>
                     </td>
-                    <td className="p-3 text-sm">{format(parseISO(cheque.issue_date), 'MMM dd, yyyy')}</td>
+                    <td className="p-3 text-sm">
+                      {cheque.issue_date ? format(parseISO(cheque.issue_date), 'MMM dd, yyyy') : 'N/A'}
+                    </td>
                     <td className="p-3 text-sm text-center">{cheque.print_count || 0}</td>
                     <td className="p-3 text-sm">{cheque.handler || 'N/A'}</td>
                   </tr>
