@@ -28,12 +28,20 @@ interface DocumentTab {
 function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updateIssueDate: (id: number, date: Date) => void }) {
   const [open, setOpen] = useState(false);
 
-  const parseLocalDate = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
+  const parseLocalDate = (dateString: string | null | undefined) => {
+    if (!dateString) return null;
+    try {
+      const [year, month, day] = dateString.split('-').map(Number);
+      if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+      const date = new Date(year, month - 1, day);
+      if (isNaN(date.getTime())) return null;
+      return date;
+    } catch {
+      return null;
+    }
   };
 
-  const displayDate = cheque.issue_date ? parseLocalDate(cheque.issue_date) : new Date();
+  const displayDate = parseLocalDate(cheque.issue_date) || new Date();
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -47,7 +55,7 @@ function DatePickerCell({ cheque, updateIssueDate }: { cheque: ChequeData, updat
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="justify-start text-left font-normal text-xs">
           <CalendarIcon className="mr-2 h-3 w-3" />
-          {format(displayDate, 'MMM dd, yyyy')}
+          {cheque.issue_date ? format(displayDate, 'MMM dd, yyyy') : 'N/A'}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
