@@ -53,8 +53,13 @@ function DatePickerCell({
   const [open, setOpen] = useState(false);
 
   const parseLocalDate = (dateString: string) => {
-    const [year, month, day] = dateString.split("-").map(Number);
-    return new Date(year, month - 1, day);
+    try {
+      const [year, month, day] = dateString.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      return isNaN(date.getTime()) ? new Date() : date;
+    } catch {
+      return new Date();
+    }
   };
 
   const displayDate = cheque.issue_date
