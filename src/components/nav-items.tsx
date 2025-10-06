@@ -39,7 +39,7 @@ export const NavItemComponent: FC<NavItemProps> = ({
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      <Icon className="size-4" />
+      <Icon className={cn(isExpanded ? "size-4" : "size-5")} />
       {isExpanded && <span className="ml-4 text-sm whitespace-nowrap">{label}</span>}
       {!isExpanded && showTooltip && (
         <div className="absolute left-full ml-2 whitespace-nowrap bg-popover text-popover-foreground text-xs rounded px-2 py-1 z-50 border shadow-md pointer-events-none">
